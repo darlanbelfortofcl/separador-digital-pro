@@ -1,0 +1,72 @@
+
+:root{
+  --brand: #00b8a9;
+  --brand-2: #3ec1d3;
+  --accent: #ffb400;
+  --success: #00c853;
+  --bg: #f7fbfc;
+  --text: #1f2937;
+}
+body{
+  background: linear-gradient(180deg, var(--bg), #ffffff);
+  color: var(--text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.navbar{
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+}
+.navbar-brand{
+  font-weight: 700;
+  letter-spacing: .3px;
+  transition: transform .3s ease;
+}
+.navbar-brand:hover{
+  transform: scale(1.05);
+}
+.card{
+  border: 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,.06);
+  border-radius: 1rem;
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.card:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.1);
+}
+.btn-brand{
+  background: var(--accent);
+  border: none;
+  color: #2d2a22;
+  font-weight: 600;
+  transition: all .3s ease;
+}
+.btn-brand:hover{
+  filter: brightness(.95);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.progress{
+  height: 22px;
+  background-color: #eef4f7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar{
+  background: linear-gradient(90deg, var(--brand), var(--success));
+  font-weight: 600;
+  transition: width .4s ease;
+}
+input.form-control, select.form-select{
+  transition: box-shadow .3s ease, border-color .3s ease;
+}
+input.form-control:focus, select.form-select:focus{
+  box-shadow: 0 0 0 .2rem rgba(0,184,169,.25);
+  border-color: var(--brand);
+}
+.log-area{
+  max-height: 220px;
+  overflow: auto;
+  background: #fcfeff;
+  border: 1px solid #e5eef4;
+  border-radius: .75rem;
+}
