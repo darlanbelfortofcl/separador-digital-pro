@@ -56,10 +56,10 @@ $("#form-dividir").addEventListener("submit", async (e)=>{
         bar.classList.add("done"); bar.style.width = "100%";
         if(!payload.download){ statusEl.textContent = "Concluído."; }
       }
-    }catch(e){ /* ignora parse */ }
+    }catch(e){ /* ignore */ }
   };
   es.onerror = ()=>{
-    statusEl.textContent = "Conexão de progresso interrompida.";
+    statusEl.textContent = "Conexão de progresso interrompida (o processamento continua no servidor).";
     loading.hidden = true;
   };
 });

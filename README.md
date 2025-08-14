@@ -1,28 +1,24 @@
 
-# Separador Digital Pro (UI moderna + funcional)
+# Separador Digital Pro — versão rápida (SSE + PyMuPDF)
 
-Ferramenta web para **converter** (PDF ↔ DOCX) e **dividir PDF** em páginas, com:
-- **Barra de progresso em tempo real** (SSE)
-- **Interface moderna e responsiva (mobile first)**
-- **Rastro de pontinhos brilhantes** no cursor
-- **Download do resultado** (arquivo único ou ZIP)
-- **Deploy fácil no Render**
+Conversão **mais rápida** e estável:
+- **PDF → DOCX** usando **PyMuPDF** com render em paralelo (Rápido/Equilibrado/Alta)
+- **DOCX → PDF** via `docx2pdf` (Windows/Mac; no Linux requer LibreOffice)
+- **Dividir PDF** com progresso
+- **SSE com keep-alive** (evita quedas no Render)
+- UI moderna, responsiva e com rastro de mouse
 
-## ▶️ Rodar local
+## Como rodar
 ```bash
 pip install -r requirements.txt
 python app.py
+# http://localhost:5000
 ```
-Abra: http://localhost:5000
 
-## ☁️ Deploy no Render
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `gunicorn app:app`
+## Deploy Render
+Build: `pip install -r requirements.txt`  
+Start: `gunicorn app:app`
 
-## Rotas (API)
-- `POST /convert` — `mode` (pdf2docx|docx2pdf), `arquivo` (file)
-- `POST /process` — `arquivo_pdf` (file), `qualidade` (low|ebook|high)
-- `GET /stream?job=ID` — SSE do progresso
-- `GET /download?path=...` — baixar
-
-© 2025 Separador Digital Pro
+## Observações
+- Em Linux/Render, a conversão **DOCX→PDF** pode não funcionar sem instalar LibreOffice ou similar.
+- A conversão **PDF→DOCX** é fiel (cada página como imagem no DOCX) e **muito mais rápida**.

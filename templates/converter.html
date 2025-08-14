@@ -17,7 +17,7 @@
   <header class="container">
     <a href="{{ url_for('home') }}" class="back">← Voltar</a>
     <h1>Converter</h1>
-    <p>Transforme PDF ↔ DOCX com facilidade.</p>
+    <p>Transforme PDF ↔ DOCX com maior velocidade.</p>
   </header>
 
   <main class="container panel">
@@ -26,6 +26,13 @@
       <select id="mode" name="mode" required>
         <option value="pdf2docx">PDF → DOCX</option>
         <option value="docx2pdf">DOCX → PDF</option>
+      </select>
+
+      <label for="qualidade_conv">Velocidade × Qualidade</label>
+      <select id="qualidade_conv" name="qualidade_conv">
+        <option value="rapido">Rápido</option>
+        <option value="equilibrado" selected>Equilibrado</option>
+        <option value="alta">Alta qualidade</option>
       </select>
 
       <label for="fileConv">Arquivo</label>

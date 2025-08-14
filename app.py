@@ -1,26 +1,22 @@
 
-from flask import Flask, render_template, request, Response, jsonify, send_file, url_for, redirect
-import os, logging, threading, queue, json, uuid, zipfile
+from flask import Flask, render_template, request, Response, jsonify, send_file, url_for
+import os, logging, threading, queue, json, uuid, zipfile, time
 from werkzeug.utils import secure_filename
 from processador import processar_pdf
 from conversor import convert_pdf_to_docx, convert_docx_to_pdf
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
-# Log básico
 logging.basicConfig(filename="processamento.log", level=logging.INFO, format="%(asctime)s %(levelname)s:%(message)s")
 
-# Pastas
 BASE_DIR = os.path.dirname(__file__)
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# Fila de jobs por ID
 job_queues = {}
 
-# ----------------- Workers -----------------
 def _worker_split(job_id, pdf_path, qualidade="ebook", timeout=60, threads=4, limpar=False):
     q = job_queues[job_id]
     try:
@@ -30,21 +26,14 @@ def _worker_split(job_id, pdf_path, qualidade="ebook", timeout=60, threads=4, li
         os.makedirs(pasta_destino, exist_ok=True)
         os.makedirs(pasta_otimizada, exist_ok=True)
 
-        # Enviar início
-        q.put({"stage":"start", "msg":"Iniciando separação…", "atual":0, "total":100})
+        q.put({"stage":"start", "msg":"Iniciando separação…", "atual":1, "total":100})
 
-        # Callback para progresso por página (se o processador chamar)
         def cb(nome, atual, total):
-            try:
-                pct = int((atual/total)*100) if total else 0
-            except Exception:
-                pct = 0
+            pct = 5 + int((atual/total)*80)
             q.put({"stage":"progress","msg":f"{nome}: Página {atual}/{total}", "atual":pct, "total":100})
 
-        # Chama o processador
         processar_pdf(pdf_path, pasta_destino, pasta_otimizada, qualidade=qualidade, timeout=timeout, limpar=limpar, threads=threads, callback=cb)
 
-        # Compacta resultado
         zip_name = os.path.join(OUTPUT_FOLDER, f"{base}_paginas.zip")
         with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zf:
             for rootp, _, files in os.walk(pasta_destino):
@@ -53,32 +42,35 @@ def _worker_split(job_id, pdf_path, qualidade="ebook", timeout=60, threads=4, li
                     rel = os.path.relpath(fp, pasta_destino)
                     zf.write(fp, rel)
 
-        q.put({"done": True, "msg": "Separação concluída ✅", "atual":100, "total":100, "download": zip_name})
+        q.put({"msg":"Separação concluída ✅", "atual":100, "total":100, "download": zip_name})
     except Exception as e:
         q.put({"error": True, "msg": f"Erro: {e}"})
+    finally:
         q.put({"done": True})
 
-def _worker_convert(job_id, src_path, mode):
+def _worker_convert(job_id, src_path, mode, qualidade_conv="equilibrado", workers=4):
     q = job_queues[job_id]
     try:
         base, ext = os.path.splitext(os.path.basename(src_path))
-        q.put({"stage":"start","msg":"Preparando conversão…","atual":5,"total":100})
+        q.put({"stage":"start","msg":"Preparando conversão…","atual":1,"total":100})
 
         if mode == "pdf2docx":
             out_path = os.path.join(OUTPUT_FOLDER, f"{base}.docx")
-            convert_pdf_to_docx(src_path, out_path)
+            def cb(msg, a, t): q.put({"msg":msg, "atual":a, "total":t})
+            convert_pdf_to_docx(src_path, out_path, qualidade=qualidade_conv, workers=workers, callback=cb)
         elif mode == "docx2pdf":
             out_path = os.path.join(OUTPUT_FOLDER, f"{base}.pdf")
-            convert_docx_to_pdf(src_path, out_path)
+            def cb(msg, a, t): q.put({"msg":msg, "atual":a, "total":t})
+            convert_docx_to_pdf(src_path, out_path, callback=cb)
         else:
             raise ValueError("Modo inválido")
 
-        q.put({"done": True, "msg": "Conversão concluída ✅", "atual":100, "total":100, "download": out_path})
+        q.put({"msg":"Conversão concluída ✅", "atual":100, "total":100, "download": out_path})
     except Exception as e:
         q.put({"error": True, "msg": f"Erro na conversão: {e}"})
+    finally:
         q.put({"done": True})
 
-# ----------------- Rotas de páginas -----------------
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -91,11 +83,11 @@ def pagina_converter():
 def pagina_dividir():
     return render_template("dividir.html")
 
-# ----------------- Rotas de API -----------------
 @app.route("/convert", methods=["POST"])
 def convert():
     mode = request.form.get("mode")
-    file = request.files.get("arquivo")  # nome padronizado
+    qualidade_conv = request.form.get("qualidade_conv","equilibrado")
+    file = request.files.get("arquivo")
     if mode not in ("pdf2docx", "docx2pdf"):
         return jsonify({"ok": False, "error": "Modo inválido."}), 400
     if not file or not file.filename:
@@ -108,7 +100,7 @@ def convert():
     job_id = uuid.uuid4().hex
     q = queue.Queue()
     job_queues[job_id] = q
-    t = threading.Thread(target=_worker_convert, args=(job_id, src_path, mode), daemon=True)
+    t = threading.Thread(target=_worker_convert, args=(job_id, src_path, mode, qualidade_conv, 4), daemon=True)
     t.start()
 
     return jsonify({"ok": True, "job_id": job_id})
@@ -146,16 +138,21 @@ def stream():
 
     def event_stream():
         done = False
+        last_ping = time.time()
         while not done:
             try:
-                item = q.get(timeout=20)
+                item = q.get(timeout=5)
                 if isinstance(item, dict):
                     if item.get("done"):
                         done = True
                     yield "data: " + json.dumps(item, ensure_ascii=False) + "\n\n"
-            except queue.Empty:
-                # Mantém conexão viva
-                yield ": keep-alive\n\n"
+                last_ping = time.time()
+            except Exception:
+                # keep-alive a cada 5s se não houver mensagens
+                if time.time() - last_ping >= 5:
+                    yield ": keep-alive\n\n"
+                    last_ping = time.time()
+        # fecha fila
         job_queues.pop(job_id, None)
 
     return Response(event_stream(), mimetype="text/event-stream")

@@ -15,8 +15,10 @@ $("#form-converter").addEventListener("submit", async (e)=>{
   const fd = new FormData();
   const mode = $("#mode").value;
   const file = $("#fileConv").files[0];
+  const qualidade = $("#qualidade_conv").value || "equilibrado";
   if(!file){ statusEl.textContent = "Selecione um arquivo."; loading.hidden = true; return; }
   fd.append("mode", mode);
+  fd.append("qualidade_conv", qualidade);
   fd.append("arquivo", file);
 
   let resp;
@@ -31,7 +33,6 @@ $("#form-converter").addEventListener("submit", async (e)=>{
   const data = await resp.json().catch(()=>({ok:false,error:"Erro inesperado"}));
   if(!data.ok){ statusEl.textContent = data.error || "Erro no envio."; loading.hidden = true; bar.classList.add("error"); bar.style.width = "100%"; return; }
 
-  // SSE
   const es = new EventSource(`/stream?job=${data.job_id}`);
   es.onmessage = (ev)=>{
     try{
@@ -58,10 +59,11 @@ $("#form-converter").addEventListener("submit", async (e)=>{
         bar.classList.add("done"); bar.style.width = "100%";
         if(!payload.download){ statusEl.textContent = "Concluído."; }
       }
-    }catch(e){ /* ignora parse */ }
+    }catch(e){ /* ignore */ }
   };
   es.onerror = ()=>{
-    statusEl.textContent = "Conexão de progresso interrompida.";
+    statusEl.textContent = "Conexão de progresso interrompida (reconectando não é necessário, o arquivo poderá estar pronto).";
+    // Não marcamos como erro fatal; o download aparecerá se o job concluir.
     loading.hidden = true;
   };
 });
