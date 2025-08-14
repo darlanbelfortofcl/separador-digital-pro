@@ -1,2 +1,14 @@
 flask
 PyPDF2
+pdf2docx
+docx2pdf
+gunicorn
+python-docx
+pdfminer.six
+reportlab
+pillow
+pandas
+openpyxl
+pytesseract
+pdf2image
+pymupdf
