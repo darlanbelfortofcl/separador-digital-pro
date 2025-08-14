@@ -1,14 +1,11 @@
-import os, logging, threading, queue, json, uuid
-from flask import Flask, render_template, request, Response, jsonify, send_file
+
+from flask import Flask, render_template, request, Response, jsonify, send_file, url_for
+import os, logging, threading, queue, json, uuid, shutil, zipfile
 from werkzeug.utils import secure_filename
-from processador import split_pdf_all, split_pdf_by_ranges, split_pdf_by_pages, compress_pdf
-from conversor import CONVERSION_FUNCTIONS
+from processador import processar_pdf
+from conversor import convert_pdf_to_docx, convert_docx_to_pdf
 
-# --- Configuração básica ---
-app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024  # 100 MB
-ALLOWED_UPLOADS = {".pdf",".docx",".txt",".xlsx",".csv",".pptx",".jpg",".jpeg",".png",".odt"}
-
+app = Flask(__name__, static_folder="static", template_folder="templates")
 logging.basicConfig(filename="processamento.log", level=logging.INFO, format="%(asctime)s %(levelname)s:%(message)s")
 
 job_queues = {}
@@ -18,143 +15,112 @@ OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-def _allowed(filename):
-    _, ext = os.path.splitext(filename.lower())
-    return ext in ALLOWED_UPLOADS
+# ----------------- Workers -----------------
+def _worker_split(job_id, pdf_path, qualidade="ebook", timeout=60, threads=4, limpar=False):
+    q = job_queues[job_id]
+    try:
+        base = os.path.splitext(os.path.basename(pdf_path))[0]
+        pasta_destino = os.path.join(OUTPUT_FOLDER, f"{base}_paginas")
+        pasta_otimizada = os.path.join(pasta_destino, "otimizados")
+        os.makedirs(pasta_destino, exist_ok=True)
+        os.makedirs(pasta_otimizada, exist_ok=True)
 
-# ---------- Workers ----------
+        def cb(nome, atual, total):
+            q.put({"msg": f"{nome}: Página {atual}/{total}", "arquivo": nome, "atual": atual, "total": total})
+
+        # processar_pdf deve dividir e (opcionalmente) otimizar
+        processar_pdf(pdf_path, pasta_destino, pasta_otimizada, qualidade=qualidade, timeout=timeout, limpar=limpar, threads=threads, callback=cb)
+
+        # Compactar resultado para facilitar download no Render
+        zip_name = os.path.join(OUTPUT_FOLDER, f"{base}_paginas.zip")
+        with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zf:
+            for root, _, files in os.walk(pasta_destino):
+                for f in files:
+                    fp = os.path.join(root, f)
+                    rel = os.path.relpath(fp, pasta_destino)
+                    zf.write(fp, rel)
+
+        q.put({"done": True, "msg": "Separação concluída ✅", "download": zip_name})
+    except Exception as e:
+        q.put({"error": True, "msg": f"Erro: {e}"})
+        q.put({"done": True})
+
 def _worker_convert(job_id, src_path, mode):
     q = job_queues[job_id]
     try:
-        if mode not in CONVERSION_FUNCTIONS:
-            raise ValueError("Modo de conversão inválido.")
-        nome = os.path.basename(src_path)
-        base, _ = os.path.splitext(nome)
-        # ext_out baseado no mode (depois do '2'), porém alguns modos têm sufixo especial
-        ext_out = mode.split("2")[-1].replace("_ocr","")
-        out_path = os.path.join(OUTPUT_FOLDER, f"{base}.{ext_out}")
-        q.put({"msg": f"Iniciando conversão: {nome}", "atual": 5, "total": 100})
-        CONVERSION_FUNCTIONS[mode](src_path, out_path)
-        q.put({"msg": "Finalizando…", "atual": 95, "total": 100})
+        base, ext = os.path.splitext(os.path.basename(src_path))
+        if mode == "pdf2docx":
+            out_path = os.path.join(OUTPUT_FOLDER, f"{base}.docx")
+            q.put({"msg": f"Iniciando conversão: {os.path.basename(src_path)}", "atual": 0, "total": 100})
+            convert_pdf_to_docx(src_path, out_path)
+        elif mode == "docx2pdf":
+            out_path = os.path.join(OUTPUT_FOLDER, f"{base}.pdf")
+            q.put({"msg": f"Iniciando conversão: {os.path.basename(src_path)}", "atual": 0, "total": 100})
+            convert_docx_to_pdf(src_path, out_path)
+        else:
+            raise ValueError("Modo inválido")
+
+        q.put({"msg": "Finalizando…", "atual": 90, "total": 100})
         q.put({"done": True, "msg": "Conversão concluída ✅", "atual": 100, "total": 100, "download": out_path})
     except Exception as e:
         q.put({"error": True, "msg": f"Erro na conversão: {e}"})
-    finally:
         q.put({"done": True})
 
-def _worker_split(job_id, src_path, mode, payload):
-    q = job_queues[job_id]
-    try:
-        base = os.path.splitext(os.path.basename(src_path))[0]
-        destino = os.path.join(OUTPUT_FOLDER, f"{base}_paginas")
-        os.makedirs(destino, exist_ok=True)
-        def cb(atual, total):
-            q.put({"msg": f"Página {atual}/{total}", "atual": atual, "total": total})
-        if mode == "all":
-            split_pdf_all(src_path, destino, callback=cb)
-        elif mode == "ranges":
-            ranges = payload.get("ranges","").strip()
-            split_pdf_by_ranges(src_path, destino, ranges, callback=cb)
-        elif mode == "pages":
-            pages = payload.get("pages","").strip()
-            split_pdf_by_pages(src_path, destino, pages, callback=cb)
-        else:
-            raise ValueError("Modo de divisão inválido.")
-        q.put({"done": True, "msg": "Divisão concluída ✅", "download_dir": destino})
-    except Exception as e:
-        q.put({"error": True, "msg": f"Erro na divisão: {e}"})
-    finally:
-        q.put({"done": True})
-
-def _worker_compress(job_id, src_path, quality):
-    q = job_queues[job_id]
-    try:
-        base = os.path.splitext(os.path.basename(src_path))[0]
-        out_path = os.path.join(OUTPUT_FOLDER, f"{base}_compressed.pdf")
-        q.put({"msg": "Comprimindo…", "atual": 10, "total": 100})
-        compress_pdf(src_path, out_path, quality=quality, progress=lambda p: q.put({"msg":"Processando…","atual":p,"total":100}))
-        q.put({"done": True, "msg": "Compressão concluída ✅", "atual": 100, "total": 100, "download": out_path})
-    except Exception as e:
-        q.put({"error": True, "msg": f"Erro na compressão: {e}"})
-    finally:
-        q.put({"done": True})
-
-# ---------- Rotas ----------
+# ----------------- Rotas -----------------
 @app.route("/")
 def index():
     return render_template("index.html")
 
-def _save_upload(file):
-    if not file or not file.filename:
-        raise ValueError("Nenhum arquivo enviado.")
-    if not _allowed(file.filename):
-        raise ValueError("Extensão de arquivo não permitida.")
-    filename = secure_filename(file.filename)
-    unique = uuid.uuid4().hex[:8] + "_" + filename
-    src_path = os.path.join(UPLOAD_FOLDER, unique)
-    file.save(src_path)
-    return src_path
+@app.route("/process", methods=["POST"])
+def process():
+    qualidade = request.form.get("qualidade", "ebook")
+    timeout = int(request.form.get("timeout", 60))
+    threads = int(request.form.get("threads", 4))
+    limpar = "limpar" in request.form
+    arquivo_pdf = request.files.get("arquivo_pdf")
+
+    if not arquivo_pdf or not arquivo_pdf.filename:
+        return jsonify({"ok": False, "error": "Selecione um arquivo PDF."}), 400
+
+    filename = secure_filename(arquivo_pdf.filename)
+    caminho_pdf = os.path.join(UPLOAD_FOLDER, filename)
+    arquivo_pdf.save(caminho_pdf)
+
+    job_id = uuid.uuid4().hex
+    q = queue.Queue()
+    job_queues[job_id] = q
+    t = threading.Thread(target=_worker_split, args=(job_id, caminho_pdf, qualidade, timeout, threads, limpar), daemon=True)
+    t.start()
+
+    return jsonify({"ok": True, "job_id": job_id})
 
 @app.route("/convert", methods=["POST"])
 def convert():
-    mode = request.form.get("mode","").strip()
-    file = request.files.get("arquivo")
-    try:
-        src_path = _save_upload(file)
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
+    mode = request.form.get("mode")
+    file = request.files.get("arquivo")  # nome padronizado no frontend
+    if mode not in ("pdf2docx", "docx2pdf"):
+        return jsonify({"ok": False, "error": "Modo inválido."}), 400
+    if not file or not file.filename:
+        return jsonify({"ok": False, "error": "Selecione um arquivo."}), 400
+
+    filename = secure_filename(file.filename)
+    src_path = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(src_path)
 
     job_id = uuid.uuid4().hex
     q = queue.Queue()
     job_queues[job_id] = q
     t = threading.Thread(target=_worker_convert, args=(job_id, src_path, mode), daemon=True)
     t.start()
-    return jsonify({"ok": True, "job_id": job_id})
 
-@app.route("/pdf/split", methods=["POST"])
-def pdf_split():
-    mode = request.form.get("mode","all")
-    file = request.files.get("arquivo_pdf")
-    payload = {
-        "ranges": request.form.get("ranges",""),
-        "pages": request.form.get("pages",""),
-    }
-    try:
-        src_path = _save_upload(file)
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
-    job_id = uuid.uuid4().hex
-    q = queue.Queue()
-    job_queues[job_id] = q
-    t = threading.Thread(target=_worker_split, args=(job_id, src_path, mode, payload), daemon=True)
-    t.start()
-    return jsonify({"ok": True, "job_id": job_id})
-
-@app.route("/pdf/compress", methods=["POST"])
-def pdf_compress():
-    quality = request.form.get("quality","medium")
-    file = request.files.get("arquivo_pdf")
-    try:
-        src_path = _save_upload(file)
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
-    job_id = uuid.uuid4().hex
-    q = queue.Queue()
-    job_queues[job_id] = q
-    t = threading.Thread(target=_worker_compress, args=(job_id, src_path, quality), daemon=True)
-    t.start()
     return jsonify({"ok": True, "job_id": job_id})
 
 @app.route("/download")
 def download():
     path = request.args.get("path")
-    if not path:
+    if not path or not os.path.exists(path):
         return "Arquivo não encontrado", 404
-    abs_output = os.path.abspath(OUTPUT_FOLDER)
-    abs_path = os.path.abspath(path)
-    if not abs_path.startswith(abs_output) or not os.path.exists(abs_path):
-        return "Arquivo não encontrado", 404
-    return send_file(abs_path, as_attachment=True)
+    return send_file(path, as_attachment=True)
 
 @app.route("/stream")
 def stream():
@@ -163,21 +129,21 @@ def stream():
         return Response("job inválido\n", status=400)
 
     q = job_queues[job_id]
+
     def event_stream():
         done = False
         while not done:
             try:
-                item = q.get(timeout=10)
-                if item.get("done"):
-                    done = True
-                yield "data: " + json.dumps(item, ensure_ascii=False) + "\n\n"
+                item = q.get(timeout=15)
+                if isinstance(item, dict):
+                    if item.get("done"):
+                        done = True
+                    yield "data: " + json.dumps(item, ensure_ascii=False) + "\\n\\n"
             except queue.Empty:
-                yield ": keep-alive\n\n"
-        try:
-            del job_queues[job_id]
-        except KeyError:
-            pass
+                yield ": keep-alive\\n\\n"
+        job_queues.pop(job_id, None)
+
     return Response(event_stream(), mimetype="text/event-stream")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

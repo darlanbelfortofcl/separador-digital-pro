@@ -1,259 +1,64 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+
+<!doctype html>
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Separador Digital Pro</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
   <header>
-    <h1><i class="fas fa-file-pdf"></i> Separador Digital Pro</h1>
-    <button id="theme-toggle" class="theme-toggle" title="Alternar tema">
-      <i class="fas fa-moon"></i>
-    </button>
+    <h1>Separador Digital Pro</h1>
+    <p>Converter, dividir e comprimir PDFs – direto do navegador.</p>
   </header>
 
-  <div id="toast-container"></div>
+  <main>
+    <div class="tabs">
+      <button class="tab active" data-tab="converter">Converter</button>
+      <button class="tab" data-tab="dividir">Dividir</button>
+    </div>
 
-  <div class="tabs" role="tablist" aria-label="Funcionalidades">
-    <button class="tab-btn active" data-tab="tab-converter" role="tab" aria-selected="true">
-      <i class="fas fa-exchange-alt"></i> Converter
-    </button>
-    <button class="tab-btn" data-tab="tab-split" role="tab" aria-selected="false">
-      <i class="fas fa-cut"></i> Dividir
-    </button>
-    <button class="tab-btn" data-tab="tab-compress" role="tab" aria-selected="false">
-      <i class="fas fa-compress"></i> Comprimir
-    </button>
-  </div>
-
-  <!-- Converter -->
-  <div id="tab-converter" class="tab-content active" role="tabpanel">
-    <div class="card">
-      <h2><i class="fas fa-exchange-alt"></i> Conversões</h2>
-      <form method="post" enctype="multipart/form-data" action="/convert" class="app-form">
-        <div class="upload-zone" data-input="file-convert">
-          <input id="file-convert" type="file" name="file" aria-label="Selecionar arquivo para conversão">
-          <div class="upload-cta">
-            <button type="button" class="upload-btn">
-              <i class="fas fa-upload"></i> Selecionar arquivo
-            </button>
-            <p class="upload-hint">ou arraste e solte aqui</p>
-          </div>
-        </div>
-
-        <label for="conversion_type">Tipo de conversão:</label>
-        <select id="conversion_type" name="conversion_type" required>
-          <option value="">Selecione...</option>
-          <option value="pdf_to_docx">PDF → DOCX</option>
-          <option value="docx_to_pdf">DOCX → PDF</option>
-          <option value="pdf_to_png">PDF → PNG</option>
-          <option value="png_to_pdf">PNG → PDF</option>
-          <option value="jpg_to_pdf">JPG → PDF</option>
+    <!-- Converter -->
+    <section id="converter" class="panel active">
+      <form id="form-converter">
+        <label for="mode">Tipo de conversão</label>
+        <select id="mode" name="mode" required>
+          <option value="pdf2docx">PDF → DOCX</option>
+          <option value="docx2pdf">DOCX → PDF</option>
         </select>
 
-        <div class="pdf-preview">
-          <div class="hint">Pré-visualização da 1ª página (quando o arquivo é PDF).</div>
-          <canvas class="pdf-canvas" style="display:none;"></canvas>
-          <embed class="pdf-embed" type="application/pdf" style="display:none;"></embed>
-        </div>
+        <label for="fileConv">Arquivo</label>
+        <input type="file" id="fileConv" name="arquivo" accept=".pdf,.docx" required>
 
-        <button type="submit" class="primary-btn">
-          <span class="btn-label">Converter</span>
-          <span class="btn-loading"><i class="fas fa-spinner fa-spin"></i> Processando...</span>
-        </button>
+        <button type="submit">Converter</button>
       </form>
-    </div>
-  </div>
+      <div class="log" id="log-converter"></div>
+    </section>
 
-  <!-- Dividir -->
-  <div id="tab-split" class="tab-content" role="tabpanel">
-    <div class="card">
-      <h2><i class="fas fa-cut"></i> Dividir PDF</h2>
-      <form method="post" enctype="multipart/form-data" action="/split" class="app-form">
-        <div class="upload-zone" data-input="file-split">
-          <input id="file-split" type="file" name="file" accept="application/pdf" aria-label="Selecionar PDF para dividir">
-          <div class="upload-cta">
-            <button type="button" class="upload-btn">
-              <i class="fas fa-upload"></i> Selecionar PDF
-            </button>
-            <p class="upload-hint">ou arraste e solte aqui</p>
-          </div>
-        </div>
+    <!-- Dividir -->
+    <section id="dividir" class="panel">
+      <form id="form-dividir">
+        <label for="fileSplit">PDF para dividir</label>
+        <input type="file" id="fileSplit" name="arquivo_pdf" accept=".pdf" required>
 
-        <div class="grid-2">
-          <div>
-            <label for="start_page">Página inicial:</label>
-            <input id="start_page" type="number" name="start_page" min="1" required>
-          </div>
-          <div>
-            <label for="end_page">Página final:</label>
-            <input id="end_page" type="number" name="end_page" min="1" required>
-          </div>
-        </div>
+        <label for="qualidade">Qualidade (compressão opcional)</label>
+        <select id="qualidade" name="qualidade">
+          <option value="low">Baixa</option>
+          <option value="ebook" selected>Média (ebook)</option>
+          <option value="high">Alta</option>
+        </select>
 
-        <div class="pdf-preview">
-          <div class="hint">Pré-visualização da 1ª página.</div>
-          <canvas class="pdf-canvas" style="display:none;"></canvas>
-          <embed class="pdf-embed" type="application/pdf" style="display:none;"></embed>
-        </div>
-
-        <button type="submit" class="primary-btn">
-          <span class="btn-label">Dividir</span>
-          <span class="btn-loading"><i class="fas fa-spinner fa-spin"></i> Processando...</span>
-        </button>
+        <button type="submit">Dividir PDF</button>
       </form>
-    </div>
-  </div>
+      <div class="log" id="log-dividir"></div>
+    </section>
+  </main>
 
-  <!-- Comprimir -->
-  <div id="tab-compress" class="tab-content" role="tabpanel">
-    <div class="card">
-      <h2><i class="fas fa-compress"></i> Comprimir PDF</h2>
-      <form method="post" enctype="multipart/form-data" action="/compress" class="app-form">
-        <div class="upload-zone" data-input="file-compress">
-          <input id="file-compress" type="file" name="file" accept="application/pdf" aria-label="Selecionar PDF para comprimir">
-          <div class="upload-cta">
-            <button type="button" class="upload-btn">
-              <i class="fas fa-upload"></i> Selecionar PDF
-            </button>
-            <p class="upload-hint">ou arraste e solte aqui</p>
-          </div>
-        </div>
+  <footer>
+    <small>© {{ 2025 }} Separador Digital Pro</small>
+  </footer>
 
-        <div class="pdf-preview">
-          <div class="hint">Pré-visualização da 1ª página.</div>
-          <canvas class="pdf-canvas" style="display:none;"></canvas>
-          <embed class="pdf-embed" type="application/pdf" style="display:none;"></embed>
-        </div>
-
-        <button type="submit" class="primary-btn">
-          <span class="btn-label">Comprimir</span>
-          <span class="btn-loading"><i class="fas fa-spinner fa-spin"></i> Processando...</span>
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <div id="trail"></div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    // Tema
-    const themeBtn = document.getElementById('theme-toggle');
-    const body = document.body;
-    if(localStorage.getItem('theme') === 'light'){ body.classList.add('light-theme'); }
-    themeBtn.addEventListener('click', () => {
-      body.classList.toggle('light-theme');
-      localStorage.setItem('theme', body.classList.contains('light-theme') ? 'light' : 'dark');
-    });
-
-    // Tabs
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
-        const id = btn.getAttribute('data-tab');
-        document.getElementById(id).classList.add('active');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    });
-
-    // Toasts
-    function showToast(type, message, timeout=3500){
-      const container = document.getElementById('toast-container');
-      const div = document.createElement('div');
-      div.className = 'toast ' + type;
-      div.innerHTML = message + ' <button class="close">×</button>';
-      container.appendChild(div);
-      div.querySelector('.close').onclick = () => div.remove();
-      setTimeout(()=>{ if(div.parentNode) div.remove(); }, timeout);
-    }
-
-    // Upload/DragDrop + Preview
-    const pdfjsLib = window['pdfjsLib'];
-    if(pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
-
-    function bindUploadZone(zone){
-      const input = zone.querySelector('input[type="file"]');
-      const btn = zone.querySelector('.upload-btn');
-      const form = zone.closest('form');
-      const previewRoot = form.querySelector('.pdf-preview');
-      const canvas = previewRoot.querySelector('.pdf-canvas');
-      const embed = previewRoot.querySelector('.pdf-embed');
-
-      // Clique no botão aciona input
-      btn.addEventListener('click', () => input.click());
-
-      // Drag & Drop
-      ['dragenter','dragover'].forEach(evt => zone.addEventListener(evt, e => {
-        e.preventDefault(); e.stopPropagation(); zone.classList.add('dragover');
-      }));
-      ;['dragleave','drop'].forEach(evt => zone.addEventListener(evt, e => {
-        e.preventDefault(); e.stopPropagation(); zone.classList.remove('dragover');
-      }));
-      zone.addEventListener('drop', e => {
-        if(e.dataTransfer.files.length){ input.files = e.dataTransfer.files; handleFile(input.files[0]); }
-      });
-
-      // Mudança do input
-      input.addEventListener('change', () => { if(input.files[0]) handleFile(input.files[0]); });
-
-      function handleFile(file){
-        if(!file){ return; }
-        // Preview somente para PDF
-        if(file.type === 'application/pdf'){
-          const reader = new FileReader();
-          if(pdfjsLib){
-            reader.onload = function(e){
-              const typedarray = new Uint8Array(e.target.result);
-              pdfjsLib.getDocument({data: typedarray}).promise.then(pdf => pdf.getPage(1)).then(page => {
-                const viewport = page.getViewport({scale: 1.2});
-                const ctx = canvas.getContext('2d');
-                canvas.width = viewport.width; canvas.height = viewport.height;
-                canvas.style.display = 'block'; embed.style.display = 'none';
-                page.render({canvasContext: ctx, viewport: viewport});
-              }).catch(()=>{
-                const url = URL.createObjectURL(file);
-                embed.src = url + '#page=1'; embed.style.display = 'block'; canvas.style.display = 'none';
-              });
-            };
-            reader.readAsArrayBuffer(file);
-          } else {
-            const url = URL.createObjectURL(file);
-            embed.src = url + '#page=1'; embed.style.display = 'block'; canvas.style.display = 'none';
-          }
-        } else {
-          // Limpa preview se não for PDF
-          canvas.style.display = 'none'; embed.style.display = 'none';
-        }
-        showToast('info','Arquivo selecionado: ' + file.name, 2500);
-      }
-    }
-
-    document.querySelectorAll('.upload-zone').forEach(bindUploadZone);
-
-    // Feedback no submit
-    document.querySelectorAll('form.app-form').forEach(form => {
-      form.addEventListener('submit', function(){
-        const btn = this.querySelector('button[type="submit"]');
-        btn.classList.add('loading');
-        btn.disabled = true;
-        showToast('info','Processando seu arquivo...');
-      });
-    });
-
-    // Rastro do mouse (já existente)
-    document.addEventListener('mousemove', function(e) {
-      const ghost = document.getElementById('trail').cloneNode(true);
-      ghost.style.left = e.clientX + 'px';
-      ghost.style.top = e.clientY + 'px';
-      document.body.appendChild(ghost);
-      setTimeout(() => { ghost.remove(); }, 500);
-    });
-  </script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
