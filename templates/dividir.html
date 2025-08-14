@@ -1,0 +1,46 @@
+
+<!doctype html>
+<html lang="pt-br">
+<head>
+  
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Separador Digital Pro</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+<script defer src="{{ url_for('static', filename='js/trail.js') }}"></script>
+
+  <script defer src="{{ url_for('static', filename='js/script_dividir.js') }}"></script>
+</head>
+<body class="bg">
+  <div class="mouse-layer"></div>
+  <header class="container">
+    <a href="{{ url_for('home') }}" class="back">← Voltar</a>
+    <h1>Dividir PDF</h1>
+    <p>Separe páginas de um PDF e baixe tudo em ZIP.</p>
+  </header>
+
+  <main class="container panel">
+    <form id="form-dividir" class="form">
+      <label for="fileSplit">PDF para dividir</label>
+      <input type="file" id="fileSplit" name="arquivo_pdf" accept=".pdf" required>
+
+      <label for="qualidade">Qualidade (compressão opcional)</label>
+      <select id="qualidade" name="qualidade">
+        <option value="low">Baixa</option>
+        <option value="ebook" selected>Média (ebook)</option>
+        <option value="high">Alta</option>
+      </select>
+
+      <button class="btn" type="submit">Dividir PDF</button>
+      <div class="loading" id="loading" hidden></div>
+
+      <div class="progress" aria-hidden="true">
+        <div class="bar" id="bar"></div>
+      </div>
+      <div class="status" id="status"></div>
+      <div id="download"></div>
+    </form>
+  </main>
+</body>
+</html>

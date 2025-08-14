@@ -2,63 +2,42 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Separador Digital Pro</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Separador Digital Pro</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+<script defer src="{{ url_for('static', filename='js/trail.js') }}"></script>
+
 </head>
-<body>
-  <header>
-    <h1>Separador Digital Pro</h1>
-    <p>Converter, dividir e comprimir PDFs – direto do navegador.</p>
+<body class="bg">
+  <div class="mouse-layer"></div>
+  <header class="container fade-in">
+    <h1>Separador <span>Digital</span> Pro</h1>
+    <p>Ferramentas rápidas e gratuitas para <strong>converter</strong> e <strong>dividir PDF</strong>.</p>
   </header>
 
-  <main>
-    <div class="tabs">
-      <button class="tab active" data-tab="converter">Converter</button>
-      <button class="tab" data-tab="dividir">Dividir</button>
-    </div>
+  <main class="container grid fade-in-up">
+    <a href="{{ url_for('pagina_converter') }}" class="card action">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5-5 5 5M7 14l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <h2>Converter</h2>
+      <p>PDF ↔ DOCX com alta fidelidade.</p>
+    </a>
 
-    <!-- Converter -->
-    <section id="converter" class="panel active">
-      <form id="form-converter">
-        <label for="mode">Tipo de conversão</label>
-        <select id="mode" name="mode" required>
-          <option value="pdf2docx">PDF → DOCX</option>
-          <option value="docx2pdf">DOCX → PDF</option>
-        </select>
-
-        <label for="fileConv">Arquivo</label>
-        <input type="file" id="fileConv" name="arquivo" accept=".pdf,.docx" required>
-
-        <button type="submit">Converter</button>
-      </form>
-      <div class="log" id="log-converter"></div>
-    </section>
-
-    <!-- Dividir -->
-    <section id="dividir" class="panel">
-      <form id="form-dividir">
-        <label for="fileSplit">PDF para dividir</label>
-        <input type="file" id="fileSplit" name="arquivo_pdf" accept=".pdf" required>
-
-        <label for="qualidade">Qualidade (compressão opcional)</label>
-        <select id="qualidade" name="qualidade">
-          <option value="low">Baixa</option>
-          <option value="ebook" selected>Média (ebook)</option>
-          <option value="high">Alta</option>
-        </select>
-
-        <button type="submit">Dividir PDF</button>
-      </form>
-      <div class="log" id="log-dividir"></div>
-    </section>
+    <a href="{{ url_for('pagina_dividir') }}" class="card action">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M12 4v16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <h2>Dividir PDF</h2>
+      <p>Separe páginas e baixe um ZIP.</p>
+    </a>
   </main>
 
-  <footer>
-    <small>© {{ 2025 }} Separador Digital Pro</small>
+  <footer class="container fade-in">
+    <small>© 2025 Separador Digital Pro</small>
   </footer>
-
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
