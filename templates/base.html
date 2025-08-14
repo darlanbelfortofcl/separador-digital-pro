@@ -1,0 +1,11 @@
+<!doctype html><html lang="pt-br" data-theme="dark"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Separador Digital Pro</title><meta name="author" content="Darlan Oliveira Ferreira Belfort"/>
+<link rel="icon" href="/static/img/icon.png"><link rel="stylesheet" href="/static/css/style.css"></head>
+<body><canvas id="trail"></canvas>
+<header class="topbar"><a class="brand" href="/">Separador Digital Pro</a>
+<nav class="nav"><a href="/converter">Converter</a><a href="/dividir">Dividir</a><a href="/mesclar">Mesclar</a><a href="/extrair">Extrair</a><a href="/comprimir">Comprimir</a></nav>
+<button id="themeToggle">🌓</button></header>
+<main class="container">{% block content %}{% endblock %}</main>
+<footer class="footer"><p>Criado por <strong>Darlan Oliveira Ferreira Belfort</strong></p></footer>
+<script src="/static/js/trail.js"></script><script src="/static/js/theme.js"></script>{% block scripts %}{% endblock %}</body></html>

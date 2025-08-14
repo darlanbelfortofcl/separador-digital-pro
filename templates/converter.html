@@ -1,40 +1,14 @@
-
-<!doctype html>
-<html lang="pt-br">
-<head>
-  
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Separador Digital Pro</title>
-<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-<script defer src="{{ url_for('static', filename='js/trail.js') }}"></script>
-
-  <script defer src="{{ url_for('static', filename='js/script_converter.js') }}"></script>
-</head>
-<body class="bg">
-  <div class="mouse-layer"></div>
-  <header class="container">
-    <a href="{{ url_for('home') }}" class="back">← Voltar</a>
-    <h1>Converter</h1>
-    <p>PDF → DOCX <strong>editável</strong> (modo turbo).</p>
-  </header>
-
-  <main class="container panel">
-    <form id="form-converter" class="form">
-      <input type="hidden" id="mode" name="mode" value="pdf2docx">
-      <label for="fileConv">Arquivo PDF</label>
-      <input type="file" id="fileConv" name="arquivo" accept=".pdf" required>
-
-      <button class="btn" type="submit">Converter</button>
-      <div class="loading" id="loading" hidden></div>
-
-      <div class="progress" aria-hidden="true">
-        <div class="bar" id="bar"></div>
-      </div>
-      <div class="status" id="status"></div>
-      <div id="download"></div>
-    </form>
-  </main>
-</body>
-</html>
+{% extends "base.html" %}{% block content %}<h2>Conversões</h2>
+<div class="tabs"><button class="tab active" data-tab="pdf2docx">PDF → DOCX</button>{% if docx2pdf_enabled %}<button class="tab" data-tab="docx2pdf">DOCX → PDF</button>{% endif %}</div>
+<div id="panel-pdf2docx" class="panel active"><div class="uploader" id="dropArea"><input type="file" id="fileInput" name="file" accept=".pdf" />
+<div class="uploader-visual"><div class="icon">☁️</div><div class="text"><strong>Arraste e solte</strong> ou <span class="btn-like">clique</span></div></div></div>
+<div class="controls">{{extra_controls|safe}}<button id="startBtn" class="primary">Iniciar</button></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div id="status" class="status"></div><div id="result" class="result"></div></div>
+{% if docx2pdf_enabled %}<div id="panel-docx2pdf" class="panel"><div class="uploader" id="dropArea"><input type="file" id="fileInput" name="file" accept=".docx,.doc" />
+<div class="uploader-visual"><div class="icon">☁️</div><div class="text"><strong>Arraste e solte</strong> ou <span class="btn-like">clique</span></div></div></div>
+<div class="controls">{{extra_controls|safe}}<button id="startBtn" class="primary">Iniciar</button></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div id="status" class="status"></div><div id="result" class="result"></div></div>{% endif %}
+{% endblock %}{% block scripts %}<script>const DOCX2PDF={{ 'true' if docx2pdf_enabled else 'false' }};</script>
+<script src="/static/js/uploader.js"></script><script src="/static/js/converter.js"></script>{% endblock %}
