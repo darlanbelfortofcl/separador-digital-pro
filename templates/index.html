@@ -2,28 +2,42 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Separador Digital Pro</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-  <script defer src="{{ url_for('static', filename='js/trail.js') }}"></script>
+  
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Separador Digital Pro</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+<script defer src="{{ url_for('static', filename='js/trail.js') }}"></script>
+
 </head>
 <body class="bg">
   <div class="mouse-layer"></div>
   <header class="container fade-in">
     <h1>Separador <span>Digital</span> Pro</h1>
-    <p>Ferramentas para <strong>converter</strong> e <strong>dividir</strong> PDFs.</p>
+    <p>Ferramentas rápidas e gratuitas para <strong>converter</strong> e <strong>dividir PDF</strong>.</p>
   </header>
+
   <main class="container grid fade-in-up">
     <a href="{{ url_for('pagina_converter') }}" class="card action">
-      <div class="icon">⇅</div>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5-5 5 5M7 14l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
       <h2>Converter</h2>
-      <p>PDF ↔ DOCX (editável)</p>
+      <p>PDF ↔ DOCX editável.</p>
     </a>
+
     <a href="{{ url_for('pagina_dividir') }}" class="card action">
-      <div class="icon">✂</div>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M12 4v16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
       <h2>Dividir PDF</h2>
-      <p>Separe páginas e baixe zip</p>
+      <p>Separe páginas e baixe um ZIP.</p>
     </a>
   </main>
+
+  <footer class="container fade-in">
+    <small>© 2025 Separador Digital Pro</small>
+  </footer>
 </body>
 </html>
