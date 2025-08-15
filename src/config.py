@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent  # project root
+BASE_DIR = Path(__file__).resolve().parent.parent
 UPLOAD_FOLDER = BASE_DIR / "uploads"
 OUTPUT_FOLDER = BASE_DIR / "outputs"
 LOG_FOLDER = BASE_DIR / "logs"
@@ -14,14 +14,11 @@ HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", 5000))
 DEBUG = os.environ.get("FLASK_DEBUG", "0") == "1"
 
-# Celery / Redis
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", REDIS_URL)
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", REDIS_URL)
+REDIS_URL = os.environ.get("REDIS_URL", "")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", REDIS_URL or "")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", REDIS_URL or "")
 
-# Cleanup
 CLEANUP_INTERVAL_MINUTES = int(os.environ.get("CLEANUP_INTERVAL_MINUTES", "30"))
 
-# Validation
 ALLOWED_EXT = {"pdf"}
-MAX_FILE_MB = None  # unlimited
+MAX_FILE_MB = None

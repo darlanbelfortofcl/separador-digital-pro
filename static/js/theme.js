@@ -1,11 +1,8 @@
 (function(){
   const key='pref-theme';
   const root=document.documentElement;
-  const btn=document.getElementById('theme-toggle');
+  const btn=()=>document.getElementById('theme-toggle');
   function apply(theme){ root.setAttribute('data-theme', theme); localStorage.setItem(key, theme); }
   const saved=localStorage.getItem(key); if(saved) apply(saved);
-  btn && btn.addEventListener('click',()=>{
-    const current=root.getAttribute('data-theme')||'light';
-    apply(current==='light'?'dark':'light');
-  });
+  document.addEventListener('click',(e)=>{ if(e.target && e.target.id==='theme-toggle'){ const cur=root.getAttribute('data-theme')||'light'; apply(cur==='light'?'dark':'light'); }});
 })();

@@ -1,4 +1,4 @@
-import os, uuid, mimetypes
+import os, uuid, mimetypes, logging
 from pathlib import Path
 try:
     import magic  # python-magic
@@ -9,6 +9,8 @@ except Exception:
 from werkzeug.utils import secure_filename
 from .config import ALLOWED_EXT
 
+log = logging.getLogger(__name__)
+
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXT
 
@@ -17,14 +19,14 @@ def detect_mime(path: Path) -> str:
         try:
             m = magic.Magic(mime=True)
             return m.from_file(str(path))
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("magic failed: %s", e)
     ctype, _ = mimetypes.guess_type(str(path))
     return ctype or "application/octet-stream"
 
 def is_pdf(path: Path) -> bool:
     mime = detect_mime(path)
-    return mime in ("application/pdf", "application/x-pdf", "application/octet-stream") and path.suffix.lower() == ".pdf"
+    return path.suffix.lower()==".pdf" and ("pdf" in (mime or "").lower())
 
 def unique_safe_filename(name: str) -> str:
     safe = secure_filename(name)

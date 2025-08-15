@@ -1,17 +1,27 @@
-from flask import Flask, render_template, request, jsonify, send_file, url_for
+import os, logging, threading, time
 from pathlib import Path
-import threading, time, os
-from .config import UPLOAD_FOLDER, OUTPUT_FOLDER, HOST, PORT, DEBUG, CLEANUP_INTERVAL_MINUTES
-from .jobs import task_split, task_merge, task_compress, task_pdf_to_docx, celery
-from .utils import allowed_file, unique_safe_filename, is_pdf
+from flask import Flask, render_template, request, jsonify, send_file, url_for
 
-# Flask app configured to serve /static at /static even with package layout
-app = Flask(__name__, template_folder='templates', static_folder='../static', static_url_path='/static')
+from .config import UPLOAD_FOLDER, OUTPUT_FOLDER, HOST, PORT, DEBUG, CLEANUP_INTERVAL_MINUTES
+from .utils import allowed_file, unique_safe_filename, is_pdf
+from . import jobs as J
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
+
+# Resolve absolute static path
+STATIC_PATH = (Path(__file__).resolve().parent.parent / "static").resolve()
+
+app = Flask(__name__, template_folder='templates', static_folder=str(STATIC_PATH), static_url_path='/static')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
 
 @app.context_processor
 def inject_urls():
     return dict(static_url=url_for("static", filename=""))
+
+@app.get("/health")
+def health():
+    return {"ok": True, "celery_enabled": bool(J.CELERY_ENABLED)}
 
 @app.route('/')
 def index():
@@ -45,10 +55,16 @@ def api_split():
     try:
         saved = _save_uploads(files)
     except Exception as e:
+        log.exception("Falha ao salvar uploads")
         return jsonify(ok=False, error=str(e)), 400
     path, original = saved[0]
-    res = task_split.delay(str(path), original)
-    return jsonify(ok=True, task_id=res.id)
+    # Celery enabled?
+    if J.CELERY_ENABLED and J.celery:
+        res = J.task_split.delay(str(path), original)
+        return jsonify(ok=True, task_id=res.id)
+    else:
+        out = J.run_split_sync(str(path), original)
+        return jsonify(ok=True, path=out)
 
 @app.post('/api/merge')
 def api_merge():
@@ -58,8 +74,12 @@ def api_merge():
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 400
     paths = [str(p) for p,_ in saved]
-    res = task_merge.delay(paths)
-    return jsonify(ok=True, task_id=res.id)
+    if J.CELERY_ENABLED and J.celery:
+        res = J.task_merge.delay(paths)
+        return jsonify(ok=True, task_id=res.id)
+    else:
+        out = J.run_merge_sync(paths)
+        return jsonify(ok=True, path=out)
 
 @app.post('/api/compress')
 def api_compress():
@@ -71,13 +91,16 @@ def api_compress():
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 400
     path, _ = saved[0]
-    res = task_compress.delay(str(path))
-    return jsonify(ok=True, task_id=res.id)
+    if J.CELERY_ENABLED and J.celery:
+        res = J.task_compress.delay(str(path))
+        return jsonify(ok=True, task_id=res.id)
+    else:
+        out = J.run_compress_sync(str(path))
+        return jsonify(ok=True, path=out)
 
 @app.post('/api/pdf-to-docx')
 def api_pdf_to_docx():
     files = request.files.getlist('arquivos')
-    ocr = request.form.get('ocr') == 'on'
     if not files or len(files)!=1:
         return jsonify(ok=False, error='Envie apenas um PDF para conversão.'), 400
     try:
@@ -85,12 +108,18 @@ def api_pdf_to_docx():
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 400
     path, _ = saved[0]
-    res = task_pdf_to_docx.delay(str(path), ocr=ocr)
-    return jsonify(ok=True, task_id=res.id)
+    if J.CELERY_ENABLED and J.celery:
+        res = J.task_pdf_to_docx.delay(str(path))
+        return jsonify(ok=True, task_id=res.id)
+    else:
+        out = J.run_pdf_to_docx_sync(str(path))
+        return jsonify(ok=True, path=out)
 
 @app.get('/api/status/<task_id>')
 def api_status(task_id):
-    r = celery.AsyncResult(task_id)
+    if not (J.CELERY_ENABLED and J.celery):
+        return jsonify(ok=False, error="Fila assíncrona desativada neste deploy."), 400
+    r = J.celery.AsyncResult(task_id)
     state = r.state
     payload = dict(state=state)
     if state == 'SUCCESS':
@@ -114,7 +143,7 @@ def _cleanup_worker(interval_min):
                 try:
                     if f.is_file():
                         age_min = (now - f.stat().st_mtime)/60
-                        if age_min > (interval_min*24/24):  # same minutes
+                        if age_min > interval_min:
                             f.unlink(missing_ok=True)
                 except Exception:
                     pass

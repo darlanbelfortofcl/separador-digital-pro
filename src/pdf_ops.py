@@ -26,7 +26,8 @@ def merge_pdfs(paths: List[Path], out_path: Path) -> Path:
         writer.write(f)
     return out_path
 
-def compress_pdf(src: Path, out_path: Path, quality: str = "default") -> Path:
+def compress_pdf(src: Path, out_path: Path) -> Path:
+    # Lightweight 'compression': re-write pages (lossless). Real compression needs Ghostscript.
     reader = PdfReader(str(src))
     writer = PdfWriter()
     for page in reader.pages:

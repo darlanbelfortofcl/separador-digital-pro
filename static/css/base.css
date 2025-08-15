@@ -1,10 +1,10 @@
 :root{
   --bg:#0b1220; --bg-card:#111827; --text:#e5e7eb; --muted:#94a3b8;
-  --primary:#60a5fa; --primary-700:#1d4ed8; --accent:#34d399; --border:#334155; --highlight:#f59e0b;
+  --primary:#60a5fa; --accent:#34d399; --border:#334155; --highlight:#f59e0b;
 }
 [data-theme="light"]{
   --bg:#f8fafc; --bg-card:#ffffff; --text:#0f172a; --muted:#475569;
-  --primary:#2563eb; --primary-700:#1d4ed8; --accent:#16a34a; --border:#e2e8f0; --highlight:#f97316;
+  --primary:#2563eb; --accent:#16a34a; --border:#e2e8f0; --highlight:#f97316;
 }
 *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto}
 .container{max-width:1100px;margin:0 auto;padding:1rem}
@@ -29,6 +29,6 @@
 .btn:hover{filter:brightness(1.05)} .btn:active{transform:translateY(1px)} .btn.primary{background:var(--primary)}
 .progress{height:10px;background:color-mix(in oklab, var(--border) 80%, transparent);border-radius:.5rem;overflow:hidden}
 .progress .bar{height:100%;width:0;background:linear-gradient(90deg,var(--primary),color-mix(in oklab, var(--primary) 60%, var(--accent)));transition:width .35s}
-.switch{display:flex;align-items:center;gap:.5rem}
+.muted{color:var(--muted);font-size:.9rem}
 .app-footer{border-top:1px solid var(--border);margin-top:2rem;padding:1rem 0;color:var(--muted);text-align:center}
 @keyframes fadeIn{to{opacity:1}}

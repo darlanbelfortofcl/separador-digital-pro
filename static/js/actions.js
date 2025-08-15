@@ -3,7 +3,6 @@
     const fd=new FormData();
     const input=form.querySelector('.upload-area input[type=file]');
     if(input && input.files.length){ for(const f of input.files){ fd.append('arquivos', f);} }
-    const ocr=form.querySelector('input[name=ocr]'); if(ocr) fd.append('ocr', ocr.checked?'on':'');
     const r=await fetch(url,{method:'POST', body:fd}); return r.json();
   }
   async function poll(taskId, onTick, onDone, onError){
@@ -28,6 +27,10 @@
       try{
         const j=await postForm(map[btn.dataset.action], form);
         if(!j.ok) throw new Error(j.error||'Erro');
+        if(j.path){ // synchronous fallback
+          bar.style.width='100%';
+          const a=document.createElement('a'); a.href='/download?path='+encodeURIComponent(j.path); a.className='btn'; a.textContent='Baixar'; result.appendChild(a); btn.disabled=false; return;
+        }
         let pct=0;
         poll(j.task_id, ()=>{ pct=Math.min(100,pct+8); bar.style.width=pct+'%'; },
           (path)=>{ bar.style.width='100%'; const a=document.createElement('a'); a.href='/download?path='+encodeURIComponent(path); a.className='btn'; a.textContent='Baixar'; result.appendChild(a); btn.disabled=false; },
