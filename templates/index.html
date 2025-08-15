@@ -1,43 +1,91 @@
-
 <!doctype html>
 <html lang="pt-br">
 <head>
-  
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Separador Digital Pro</title>
-<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-<script defer src="{{ url_for('static', filename='js/trail.js') }}"></script>
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Divisor de PDFs (múltiplos arquivos)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 2rem; }
+    .card { max-width: 820px; margin: 0 auto; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 12px; }
+    .row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    .btn { background: #111827; color: #fff; padding: 0.6rem 1rem; border: 0; border-radius: 8px; cursor: pointer; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    pre { background: #0b1020; color: #e5e7eb; padding: 1rem; border-radius: 8px; overflow: auto; }
+    a { color: #0ea5e9; }
+  </style>
 </head>
-<body class="bg">
-  <div class="mouse-layer"></div>
-  <header class="container fade-in">
-    <h1>Separador <span>Digital</span> Pro</h1>
-    <p>Ferramentas rápidas e gratuitas para <strong>converter</strong> e <strong>dividir PDF</strong>.</p>
-  </header>
+<body>
+  <div class="card">
+    <h2>Dividir PDFs (vários de uma vez)</h2>
+    <p>Envie um ou mais <b>PDFs</b>. Cada arquivo será dividido em páginas com o <i>nome original</i> preservado.
+       O ZIP final terá uma pasta por PDF.</p>
+    <form id="form" class="row">
+      <input type="file" name="arquivos" id="arquivos" accept=".pdf" multiple required>
+      <button class="btn" id="btn">Iniciar divisão</button>
+    </form>
+    <p id="status"></p>
+    <div id="out"></div>
+  </div>
 
-  <main class="container grid fade-in-up">
-    <a href="{{ url_for('pagina_converter') }}" class="card action">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5-5 5 5M7 14l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-      </div>
-      <h2>Converter</h2>
-      <p>PDF ↔ DOCX editável.</p>
-    </a>
+  <script>
+    const form = document.getElementById('form');
+    const btn = document.getElementById('btn');
+    const statusEl = document.getElementById('status');
+    const outEl = document.getElementById('out');
+    let currentJob = null;
 
-    <a href="{{ url_for('pagina_dividir') }}" class="card action">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M12 4v16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
-      </div>
-      <h2>Dividir PDF</h2>
-      <p>Separe páginas e baixe um ZIP.</p>
-    </a>
-  </main>
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const files = document.getElementById('arquivos').files;
+      if(!files.length){ return; }
+      const fd = new FormData();
+      for(const f of files){ fd.append('arquivos', f); }
+      btn.disabled = true; statusEl.textContent = 'Enviando e iniciando…'; outEl.innerHTML='';
+      try{
+        const resp = await fetch('/split', { method: 'POST', body: fd });
+        const data = await resp.json();
+        if(!resp.ok || !data.ok) throw new Error(data.error || 'Falha ao iniciar');
+        currentJob = data.job_id;
+        statusEl.textContent = 'Processando… (job ' + currentJob + ')';
+        poll();
+      }catch(err){
+        statusEl.textContent = 'Erro: ' + err.message;
+        btn.disabled = false;
+      }
+    });
 
-  <footer class="container fade-in">
-    <small>© 2025 Separador Digital Pro</small>
-  </footer>
+    async function poll(){
+      if(!currentJob) return;
+      try{
+        const resp = await fetch('/status/'+currentJob);
+        const data = await resp.json();
+        if(!resp.ok || !data.ok) throw new Error(data.error || 'Falha no status');
+        const job = data.job;
+        const total = job.total || 0;
+        const progress = job.progress || 0;
+        if(job.status === 'running'){
+          statusEl.textContent = `Processando… ${progress}/${total}`;
+          setTimeout(poll, 1000);
+        }else if(job.status === 'done'){
+          statusEl.textContent = 'Concluído ✓';
+          const a = document.createElement('a');
+          a.href = '/download?path=' + encodeURIComponent(job.zip);
+          a.textContent = 'Baixar ZIP';
+          outEl.innerHTML = '';
+          outEl.appendChild(a);
+          btn.disabled = false;
+          currentJob = null;
+        }else{
+          statusEl.textContent = 'Erro: ' + (job.error || 'desconhecido');
+          btn.disabled = false;
+          currentJob = null;
+        }
+      }catch(err){
+        statusEl.textContent = 'Erro: ' + err.message;
+        btn.disabled = false;
+        currentJob = null;
+      }
+    }
+  </script>
 </body>
 </html>
