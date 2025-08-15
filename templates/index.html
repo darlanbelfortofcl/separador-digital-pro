@@ -1,1 +1,119 @@
-<h1>PDF Multi Splitter</h1>
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Divisor de PDFs</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 0; }
+    header { background-color: #2563eb; color: white; padding: 1rem; text-align: center; }
+    main { max-width: 700px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #1e293b; }
+    p { color: #475569; text-align: center; }
+    .upload-area { border: 2px dashed #94a3b8; border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: border-color 0.3s; }
+    .upload-area:hover { border-color: #2563eb; }
+    input[type="file"] { display: none; }
+    .btn { display: inline-block; background-color: #16a34a; color: white; padding: 0.7rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: background-color 0.3s; margin-top: 1rem; }
+    .btn:hover { background-color: #15803d; }
+    .status { margin-top: 1.5rem; text-align: center; font-weight: bold; color: #1e293b; }
+    .progress { height: 20px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-top: 1rem; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, #2563eb, #38bdf8); width: 0%; transition: width 0.4s; }
+    .download-link { display: inline-block; margin-top: 1.5rem; padding: 0.7rem 1.5rem; background-color: #f97316; color: white; border-radius: 8px; text-decoration: none; transition: background-color 0.3s; }
+    .download-link:hover { background-color: #ea580c; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>📄 Divisor de PDFs</h2>
+  </header>
+  <main>
+    <h1>Envie seus PDFs</h1>
+    <p>Envie um ou mais PDFs para dividi-los em páginas separadas, mantendo o nome original.</p>
+    <label class="upload-area" for="file-input">
+      Clique aqui ou arraste arquivos PDF
+      <input type="file" id="file-input" multiple accept=".pdf">
+    </label>
+    <div style="text-align:center;">
+      <button class="btn" id="upload-btn">Iniciar divisão</button>
+    </div>
+    <div class="status" id="status-text"></div>
+    <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+    <div style="text-align:center;" id="download-area"></div>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const uploadBtn = document.getElementById('upload-btn');
+    const statusText = document.getElementById('status-text');
+    const progressBar = document.getElementById('progress-bar');
+    const downloadArea = document.getElementById('download-area');
+    let currentJob = null;
+
+    uploadBtn.addEventListener('click', async () => {
+      const files = fileInput.files;
+      if (!files.length) {
+        alert('Selecione pelo menos um arquivo PDF');
+        return;
+      }
+      const fd = new FormData();
+      for (const f of files) {
+        fd.append('arquivos', f);
+      }
+      statusText.textContent = 'Enviando arquivos...';
+      progressBar.style.width = '0%';
+      downloadArea.innerHTML = '';
+      uploadBtn.disabled = true;
+
+      try {
+        const resp = await fetch('/split', { method: 'POST', body: fd });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || 'Falha ao iniciar');
+        currentJob = data.job_id;
+        statusText.textContent = 'Processando arquivos...';
+        pollStatus();
+      } catch (err) {
+        statusText.textContent = 'Erro: ' + err.message;
+        uploadBtn.disabled = false;
+      }
+    });
+
+    async function pollStatus() {
+      if (!currentJob) return;
+      try {
+        const resp = await fetch('/status/' + currentJob);
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.error || 'Falha no status');
+        const job = data.job;
+        const total = job.total || 0;
+        const progress = job.progress || 0;
+        if (job.status === 'running') {
+          statusText.textContent = `Processando ${progress}/${total} PDFs...`;
+          if (total > 0) {
+            const percent = Math.round((progress / total) * 100);
+            progressBar.style.width = percent + '%';
+          }
+          setTimeout(pollStatus, 1000);
+        } else if (job.status === 'done') {
+          statusText.textContent = 'Processamento concluído!';
+          progressBar.style.width = '100%';
+          const a = document.createElement('a');
+          a.href = '/download?path=' + encodeURIComponent(job.zip);
+          a.textContent = 'Baixar ZIP';
+          a.className = 'download-link';
+          downloadArea.appendChild(a);
+          uploadBtn.disabled = false;
+          currentJob = null;
+        } else {
+          statusText.textContent = 'Erro: ' + (job.error || 'desconhecido');
+          uploadBtn.disabled = false;
+          currentJob = null;
+        }
+      } catch (err) {
+        statusText.textContent = 'Erro: ' + err.message;
+        uploadBtn.disabled = false;
+        currentJob = null;
+      }
+    }
+  </script>
+</body>
+</html>
