@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}PDF → DOCX{% endblock %}
+{% block content %}
+<article class="card">
+  <h2>Converter PDF para DOCX</h2>
+  <form class="upload-form" id="form-convert">
+    <div class="upload-area" data-target="pdf-to-docx">
+      <input type="file" name="arquivos" accept=".pdf">
+      <p>Solte ou clique para selecionar</p>
+      <ul class="file-list"></ul>
+    </div>
+    <label class="switch">
+      <input type="checkbox" name="ocr">
+      <span>Habilitar OCR (Tesseract)</span>
+    </label>
+    <button class="btn primary" data-action="pdf-to-docx">Converter</button>
+    <div class="progress"><div class="bar"></div></div>
+    <div class="result"></div>
+  </form>
+</article>
+{% endblock %}

@@ -10,4 +10,3 @@ python-magic==0.4.27
 celery==5.4.0
 redis==5.0.8
 gunicorn==22.0.0
-htmx==1.9.10

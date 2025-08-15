@@ -5,30 +5,19 @@
     const list=area.querySelector('.file-list');
     function render(){
       list.innerHTML='';
-      const files=[...input.files];
-      files.forEach(f=>{
+      [...input.files].forEach(f=>{
         const li=document.createElement('li');
-        const b=document.createElement('span');
-        b.className='file-badge';
-        b.textContent='PDF';
-        const t=document.createElement('span');
-        t.textContent=f.name;
-        li.appendChild(b); li.appendChild(t);
-        list.appendChild(li);
+        const b=document.createElement('span'); b.className='file-badge'; b.textContent='PDF';
+        const t=document.createElement('span'); t.textContent=f.name;
+        li.appendChild(b); li.appendChild(t); list.appendChild(li);
       });
     }
     area.addEventListener('click',()=>input.click());
-    area.addEventListener('keydown',(e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); input.click(); }});
     input.addEventListener('change',render);
     area.addEventListener('dragover',e=>{ e.preventDefault(); area.classList.add('drag'); });
     area.addEventListener('dragleave',()=> area.classList.remove('drag'));
-    area.addEventListener('drop',e=>{
-      e.preventDefault();
-      if(e.dataTransfer.files?.length){ input.files=e.dataTransfer.files; render(); }
-      area.classList.remove('drag');
-    });
+    area.addEventListener('drop',e=>{ e.preventDefault(); if(e.dataTransfer.files?.length){ input.files=e.dataTransfer.files; render(); } area.classList.remove('drag'); });
   }
-
   document.addEventListener('DOMContentLoaded',()=>{
     document.querySelectorAll('form.upload-form').forEach(setupUpload);
   });

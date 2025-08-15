@@ -1,66 +1,34 @@
 :root{
-  --bg: #0b1220; /* slate dark baseline */
-  --bg-card: #111827;
-  --text: #e5e7eb;
-  --muted: #94a3b8;
-  --primary: #60a5fa;
-  --primary-700:#1d4ed8;
-  --accent: #34d399;
-  --border: #334155;
-  --highlight:#f59e0b;
+  --bg:#0b1220; --bg-card:#111827; --text:#e5e7eb; --muted:#94a3b8;
+  --primary:#60a5fa; --primary-700:#1d4ed8; --accent:#34d399; --border:#334155; --highlight:#f59e0b;
 }
 [data-theme="light"]{
-  --bg: #f8fafc;
-  --bg-card: #ffffff;
-  --text: #0f172a;
-  --muted: #475569;
-  --primary: #2563eb;
-  --primary-700:#1d4ed8;
-  --accent: #16a34a;
-  --border: #e2e8f0;
-  --highlight:#f97316;
+  --bg:#f8fafc; --bg-card:#ffffff; --text:#0f172a; --muted:#475569;
+  --primary:#2563eb; --primary-700:#1d4ed8; --accent:#16a34a; --border:#e2e8f0; --highlight:#f97316;
 }
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',sans-serif;line-height:1.4}
-.container{width:100%;max-width:1100px;margin:0 auto;padding:1rem}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto}
+.container{max-width:1100px;margin:0 auto;padding:1rem}
 .app-header{border-bottom:1px solid var(--border)}
 .header-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.brand{font-size:1.5rem}
 .nav{display:flex;gap:.75rem;align-items:center}
 .nav-link{color:var(--text);text-decoration:none;padding:.4rem .6rem;border-radius:.5rem}
 .nav-link:hover{background:color-mix(in oklab, var(--primary) 20%, transparent)}
 .theme-toggle{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:.6rem;padding:.4rem .6rem;cursor:pointer}
-.theme-toggle:hover{border-color:var(--primary)}
-
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
 @media (max-width: 960px){.grid{grid-template-columns:repeat(2,1fr)}}
 @media (max-width: 640px){.grid{grid-template-columns:1fr}}
-
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:1rem;box-shadow:0 10px 20px rgb(0 0 0 / .08);display:flex;flex-direction:column;gap:.75rem}
-.card h2{margin:.2rem 0}
-
 .upload-form{display:flex;flex-direction:column;gap:.75rem}
 .upload-area{display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed var(--border);border-radius:.75rem;min-height:140px;padding:1rem;text-align:center;transition:border-color .25s, box-shadow .25s, transform .1s;outline:none}
 .upload-area:hover{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklab, var(--primary) 25%, transparent)}
-.upload-area:focus{box-shadow:0 0 0 3px color-mix(in oklab, var(--primary) 45%, transparent)}
 .upload-area input[type=file]{display:none}
 .file-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem}
 .file-list li{display:flex;align-items:center;gap:.5rem;opacity:0;animation:fadeIn .3s forwards}
 .file-badge{background:var(--highlight);color:white;font-weight:700;border-radius:.25rem;padding:.1rem .3rem;font-size:.8rem}
-
 .btn{border:none;border-radius:.6rem;padding:.7rem 1rem;cursor:pointer;color:white;background:var(--accent);transition:transform .1s, filter .2s}
-.btn:hover{filter:brightness(1.05)}
-.btn:active{transform:translateY(1px)}
-.btn.primary{background:var(--primary)}
-.btn.primary:hover{filter:brightness(1.1)}
-
+.btn:hover{filter:brightness(1.05)} .btn:active{transform:translateY(1px)} .btn.primary{background:var(--primary)}
 .progress{height:10px;background:color-mix(in oklab, var(--border) 80%, transparent);border-radius:.5rem;overflow:hidden}
 .progress .bar{height:100%;width:0;background:linear-gradient(90deg,var(--primary),color-mix(in oklab, var(--primary) 60%, var(--accent)));transition:width .35s}
-
 .switch{display:flex;align-items:center;gap:.5rem}
-
 .app-footer{border-top:1px solid var(--border);margin-top:2rem;padding:1rem 0;color:var(--muted);text-align:center}
-
 @keyframes fadeIn{to{opacity:1}}
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
