@@ -26,5 +26,4 @@ def start_multi_split_job(job_id: str, pdfs: List[Path], original_names: List[st
         except Exception as e:
             jobs[job_id]["status"] = "error"
             jobs[job_id]["error"] = str(e)
-    t = threading.Thread(target=run, daemon=True)
-    t.start()
+    threading.Thread(target=run, daemon=True).start()
