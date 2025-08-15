@@ -34,8 +34,9 @@ def convert_pdf_to_docx(src_pdf: Path, out_docx: Path, turbo: bool = True,
             pct = int(2 + p * 96)  # 2..98
             callback(min(98, max(2, pct)), f"Convertendo… ({pages} páginas)")
 
-    with Converter(str(src_pdf)) as cv:
-        cv.convert(str(out_docx), start=0, end=None, layout_mode=layout_mode, progress=_progress)
+    cv = Converter(str(src_pdf))
+    cv.convert(str(out_docx), start=0, end=None, layout_mode=layout_mode, progress=_progress)
+    cv.close()
 
     if callback:
         callback(100, "Conversão finalizada.")
