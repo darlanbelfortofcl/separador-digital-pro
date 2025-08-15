@@ -1,27 +1,25 @@
-<!doctype html>
-<html lang="pt-br" data-theme="light">
+<!doctype html><html lang='pt-br' data-theme='light'>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
   <title>{% block title %}PDF Tool{% endblock %}</title>
-  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-  <script defer src="{{ url_for('static', filename='js/theme.js') }}"></script>
-  <script defer src="{{ url_for('static', filename='js/uploader.js') }}"></script>
-  <script defer src="{{ url_for('static', filename='js/actions.js') }}"></script>
+  <script>(function(){try{var k='pref-theme';var t=localStorage.getItem(k)||(document.cookie.match(/theme=([^;]+)/)||[])[1];if(t){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();</script>
+  <script src='https://unpkg.com/htmx.org@1.9.10'></script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.js'></script>
+  <link rel='stylesheet' href='{{ url_for("static", filename="css/base.css") }}'>
+  <script defer src='{{ url_for("static", filename="js/theme.js") }}'></script>
+  <script defer src='{{ url_for("static", filename="js/uploader.js") }}'></script>
+  <script defer src='{{ url_for("static", filename="js/actions.js") }}'></script>
+  <script defer src='{{ url_for("static", filename="js/preview.js") }}'></script>
 </head>
 <body>
-  <header class="app-header">
-    <div class="container header-inner">
-      <div class="brand" aria-label="PDF Tool">📄 PDF Tool</div>
-      <nav class="nav" aria-label="Menu principal">
-        <a href="{{ url_for('index') }}" class="nav-link">Início</a>
-        <a href="{{ url_for('converter') }}" class="nav-link">Conversor</a>
-        <button class="theme-toggle" id="theme-toggle" aria-label="Alternar tema">🌓</button>
-      </nav>
-    </div>
-  </header>
-  <main class="container">{% block content %}{% endblock %}</main>
-  <footer class="app-footer"><div class="container">Feito com ❤️ — Acessível e performático</div></footer>
-</body>
-</html>
+  <header class='app-header'><div class='container header-inner'>
+    <div class='brand' aria-label='PDF Tool'>📄 PDF Tool</div>
+    <nav class='nav' aria-label='Menu principal'>
+      <a href='{{ url_for("index") }}' class='nav-link'>Início</a>
+      <a href='{{ url_for("converter") }}' class='nav-link'>Conversor</a>
+      <button class='theme-toggle' id='theme-toggle' aria-label='Alternar tema'>🌓</button>
+    </nav>
+  </div></header>
+  <main class='container'>{% block content %}{% endblock %}</main>
+  <footer class='app-footer'><div class='container'>Feito com ❤️ — Acessível e performático</div></footer>
+</body></html>
