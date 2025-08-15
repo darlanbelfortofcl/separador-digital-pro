@@ -3,81 +3,134 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Divisor de PDFs</title>
+  <title>📄 Divisor de PDFs</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABV0lEQVR4nI2TT0tUURSGv1kq0bQ0ZC0bqg+QFqgkqJgCwWqUeEo0aRkqGxYJr0qg0mH7m0o1gq2D1S6sNQ0C9k+e8xvJzYb42Q2e7zvnfOc7z3nJ9Hq9g7Qv9Y5Jt0g3yGq3Q3mQm1v1tVh0l7Kp0YyqgCqkq4a3a3v3mJp+m9Jb7NwzS8Qm8d6j1b2z3zjHcWQnE1Jv7VQ4iQ0ZL7Ih2kR7q0p0Qp4m0yqO3o2p4hX2b0u+9Qq8n3gA3kqk+Q1f5k6hZ1jQJrQYQ3YvQn0y1r3wUo9KqXzVhV1x8d2mG4mWQ1mH8i9b3m9Mu6GQHkq8Q7r1fG2P3s8C1m7rQk1mM8lJXqfSLE3FQm0kQ9kF9uYv9i6zq8C8w0o3g0p5Y5mCpQyZkQ4k7b0wH5tF1X3z5f1eB8j1mJ9oY/9wDk9wq3L6vT7M3cVQJ6xgJXhQYw1wT4j3cj8nu8J/3bG0o0s7rVb2kqgq2YcYy0uQkZ9gKXfF3QZ6PZ7yQY5fK3m9f2XW8r5m7H8AqkqvJk5qoXoAAAAASUVORK5CYII=">
   <style>
-    body { font-family: Arial, sans-serif; background-color: #f4f7fb; margin: 0; padding: 0; }
-    header { background-color: #2563eb; color: white; padding: 1rem; text-align: center; }
-    main { max-width: 700px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #1e293b; }
-    p { color: #475569; text-align: center; }
-    .upload-area { border: 2px dashed #94a3b8; border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: border-color 0.3s; }
-    .upload-area:hover { border-color: #2563eb; }
-    input[type="file"] { display: none; }
-    .btn { display: inline-block; background-color: #16a34a; color: white; padding: 0.7rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: background-color 0.3s; margin-top: 1rem; }
-    .btn:hover { background-color: #15803d; }
-    .status { margin-top: 1.5rem; text-align: center; font-weight: bold; color: #1e293b; }
-    .progress { height: 20px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin-top: 1rem; }
-    .progress-bar { height: 100%; background: linear-gradient(90deg, #2563eb, #38bdf8); width: 0%; transition: width 0.4s; }
-    .download-link { display: inline-block; margin-top: 1.5rem; padding: 0.7rem 1.5rem; background-color: #f97316; color: white; border-radius: 8px; text-decoration: none; transition: background-color 0.3s; }
-    .download-link:hover { background-color: #ea580c; }
+    :root {
+      --primary: #2563eb; /* azul confiança */
+      --accent: #16a34a;  /* verde ação */
+      --highlight: #f97316; /* laranja destaque */
+      --bg: #f4f7fb;
+      --text: #1e293b;
+      --muted: #475569;
+      --border: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: var(--bg); margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: var(--primary); color: #fff; padding: 1rem; text-align: center; }
+    main { flex: 1; display: flex; justify-content: center; align-items: center; padding: 1rem; }
+    .card { width: 100%; max-width: 780px; background: #fff; border-radius: 14px; padding: 2rem; box-shadow: 0 10px 20px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 1rem; }
+    h1 { margin: .2rem 0 0; color: var(--text); text-align: center; }
+    p.desc { color: var(--muted); text-align: center; margin: 0; }
+    .upload-area { border: 2px dashed var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: border-color .25s, background .25s; }
+    .upload-area:hover { border-color: var(--primary); background: #f8fafc; }
+    .upload-area input[type=file] { display: none; }
+    .file-list { display: grid; grid-template-columns: 1fr; gap: .5rem; margin-top: .5rem; }
+    .file-item { display: flex; align-items: center; gap: .6rem; background: #f1f5f9; padding: .6rem .8rem; border-radius: 8px; }
+    .file-icon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; background: #ef4444; color: #fff; font-weight: bold; border-radius: 4px; }
+    .actions { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; }
+    .btn { background: var(--accent); color: #fff; border: none; padding: .8rem 1.4rem; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: transform .1s, background .2s; }
+    .btn:hover { background: #15803d; }
+    .btn:active { transform: translateY(1px); }
+    .status { text-align: center; color: var(--text); font-weight: 600; }
+    .progress { width: 100%; height: 16px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), #38bdf8); transition: width .35s; }
+    .download-link { display: inline-block; background: var(--highlight); color: #fff; padding: .8rem 1.2rem; border-radius: 10px; text-decoration: none; }
+    .download-link:hover { filter: brightness(.95); }
+    @media (max-width: 600px) {
+      .card { padding: 1.2rem; }
+      .btn { width: 100%; font-size: 1.05rem; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h2>📄 Divisor de PDFs</h2>
-  </header>
+  <header><strong>📄 Divisor de PDFs</strong></header>
   <main>
-    <h1>Envie seus PDFs</h1>
-    <p>Envie um ou mais PDFs para dividi-los em páginas separadas, mantendo o nome original.</p>
-    <label class="upload-area" for="file-input">
-      Clique aqui ou arraste arquivos PDF
-      <input type="file" id="file-input" multiple accept=".pdf">
-    </label>
-    <div style="text-align:center;">
-      <button class="btn" id="upload-btn">Iniciar divisão</button>
+    <div class="card">
+      <h1>Envie seus PDFs</h1>
+      <p class="desc">Selecione um ou mais PDFs. Vamos dividir página por página e manter o nome original de cada arquivo.</p>
+
+      <label class="upload-area" for="file-input">
+        <div><strong>Clique aqui</strong> ou arraste e solte seus PDFs</div>
+        <input id="file-input" type="file" accept=".pdf" multiple>
+        <div class="file-list" id="file-list" aria-live="polite"></div>
+      </label>
+
+      <div class="actions">
+        <button class="btn" id="start-btn">Iniciar divisão</button>
+      </div>
+
+      <div class="status" id="status-text"></div>
+      <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+      <div style="text-align:center" id="download-area"></div>
     </div>
-    <div class="status" id="status-text"></div>
-    <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
-    <div style="text-align:center;" id="download-area"></div>
   </main>
 
   <script>
-    const fileInput = document.getElementById('file-input');
-    const uploadBtn = document.getElementById('upload-btn');
+    const input = document.getElementById('file-input');
+    const fileList = document.getElementById('file-list');
+    const startBtn = document.getElementById('start-btn');
     const statusText = document.getElementById('status-text');
     const progressBar = document.getElementById('progress-bar');
     const downloadArea = document.getElementById('download-area');
     let currentJob = null;
 
-    uploadBtn.addEventListener('click', async () => {
-      const files = fileInput.files;
-      if (!files.length) {
-        alert('Selecione pelo menos um arquivo PDF');
-        return;
+    // Render selected files list with icons
+    function renderFiles(files) {
+      fileList.innerHTML = '';
+      if (!files || !files.length) return;
+      [...files].forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        const icon = document.createElement('span');
+        icon.className = 'file-icon';
+        icon.textContent = 'PDF';
+        const name = document.createElement('span');
+        name.textContent = f.name;
+        item.appendChild(icon);
+        item.appendChild(name);
+        fileList.appendChild(item);
+      });
+    }
+    input.addEventListener('change', () => renderFiles(input.files));
+
+    // Drag & drop support
+    const uploadArea = document.querySelector('.upload-area');
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = '#2563eb'; });
+    uploadArea.addEventListener('dragleave', (e) => { uploadArea.style.borderColor = '#94a3b8'; });
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = '#94a3b8';
+      const dtFiles = e.dataTransfer.files;
+      if (dtFiles && dtFiles.length) {
+        input.files = dtFiles;
+        renderFiles(dtFiles);
       }
+    });
+
+    startBtn.addEventListener('click', async () => {
+      const files = input.files;
+      if (!files.length) { alert('Selecione pelo menos um PDF.'); return; }
       const fd = new FormData();
-      for (const f of files) {
-        fd.append('arquivos', f);
-      }
-      statusText.textContent = 'Enviando arquivos...';
+      [...files].forEach(f => fd.append('arquivos', f));
+      statusText.textContent = 'Enviando arquivos…';
       progressBar.style.width = '0%';
       downloadArea.innerHTML = '';
-      uploadBtn.disabled = true;
-
+      startBtn.disabled = true;
       try {
         const resp = await fetch('/split', { method: 'POST', body: fd });
         const data = await resp.json();
         if (!resp.ok || !data.ok) throw new Error(data.error || 'Falha ao iniciar');
         currentJob = data.job_id;
-        statusText.textContent = 'Processando arquivos...';
-        pollStatus();
+        statusText.textContent = 'Processando…';
+        poll();
       } catch (err) {
         statusText.textContent = 'Erro: ' + err.message;
-        uploadBtn.disabled = false;
+        startBtn.disabled = false;
       }
     });
 
-    async function pollStatus() {
+    async function poll() {
       if (!currentJob) return;
       try {
         const resp = await fetch('/status/' + currentJob);
@@ -87,30 +140,30 @@
         const total = job.total || 0;
         const progress = job.progress || 0;
         if (job.status === 'running') {
-          statusText.textContent = `Processando ${progress}/${total} PDFs...`;
+          statusText.textContent = `Processando {progress}/{total} PDFs…`.replace('{progress}', progress).replace('{total}', total);
           if (total > 0) {
-            const percent = Math.round((progress / total) * 100);
-            progressBar.style.width = percent + '%';
+            const pct = Math.round((progress / total) * 100);
+            progressBar.style.width = pct + '%';
           }
-          setTimeout(pollStatus, 1000);
+          setTimeout(poll, 1000);
         } else if (job.status === 'done') {
-          statusText.textContent = 'Processamento concluído!';
+          statusText.textContent = 'Concluído ✓';
           progressBar.style.width = '100%';
           const a = document.createElement('a');
           a.href = '/download?path=' + encodeURIComponent(job.zip);
           a.textContent = 'Baixar ZIP';
           a.className = 'download-link';
           downloadArea.appendChild(a);
-          uploadBtn.disabled = false;
+          startBtn.disabled = false;
           currentJob = null;
         } else {
           statusText.textContent = 'Erro: ' + (job.error || 'desconhecido');
-          uploadBtn.disabled = false;
+          startBtn.disabled = false;
           currentJob = null;
         }
       } catch (err) {
         statusText.textContent = 'Erro: ' + err.message;
-        uploadBtn.disabled = false;
+        startBtn.disabled = false;
         currentJob = null;
       }
     }

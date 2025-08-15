@@ -1,17 +1,22 @@
-# PDF Multi Splitter
+# Divisor de PDFs (múltiplos arquivos, UI moderna)
 
-App Flask para dividir vários PDFs, mantendo nomes originais.
+- Envie vários PDFs de uma vez
+- Lista os arquivos selecionados (ícone + nome)
+- Divide cada PDF em páginas, preservando o nome original
+- Gera um ZIP com pastas por arquivo
+- Assíncrono com status e progresso
+- Pronto para rodar local e no Render
 
-## Local
+## Rodando local
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 python app.py
+# abra http://localhost:5000
 ```
 
-## Render
-- Adicione este código ao GitHub
-- Configure como Web Service Python
+## Deploy no Render
 - Build Command: `pip install -r requirements.txt`
-- Start Command: deixado no Procfile (`gunicorn app:app`)
+- Start Command: deixe vazio (usa o Procfile: `gunicorn app:app`)

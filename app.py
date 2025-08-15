@@ -1,12 +1,11 @@
 from flask import Flask, request, jsonify, send_file, render_template
 from pathlib import Path
 import uuid
-from config import UPLOAD_FOLDER, OUTPUT_FOLDER, HOST, PORT, MAX_CONTENT_LENGTH, DEBUG
+from config import UPLOAD_FOLDER, OUTPUT_FOLDER, HOST, PORT, DEBUG
 from file_utils import allowed_file, unique_safe_filename, is_safe_output
 from jobs import start_multi_split_job, jobs
 
 app = Flask(__name__, template_folder="templates")
-app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 
 @app.get("/")
 def index():
@@ -19,6 +18,8 @@ def split():
         return jsonify({"ok": False, "error": "Envie pelo menos um PDF."}), 400
     saved_paths, orig_names = [], []
     for f in files:
+        if not f or not f.filename:
+            continue
         if not allowed_file(f.filename):
             return jsonify({"ok": False, "error": f"Extensão não permitida: {f.filename}"}), 400
         fname = unique_safe_filename(f.filename)
@@ -26,6 +27,8 @@ def split():
         f.save(dest)
         saved_paths.append(dest)
         orig_names.append(f.filename)
+    if not saved_paths:
+        return jsonify({"ok": False, "error": "Nenhum PDF válido foi enviado."}), 400
     job_id = uuid.uuid4().hex
     start_multi_split_job(job_id, saved_paths, orig_names)
     return jsonify({"ok": True, "job_id": job_id})
