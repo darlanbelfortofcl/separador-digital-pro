@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    container_name: pdfsuite_web
+    ports:
+      - "5000:5000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - ./:/app
+  worker:
+    build: .
+    container_name: pdfsuite_worker
+    command: celery -A celery_app.celery worker --loglevel=INFO
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - ./:/app
+  redis:
+    image: redis:7-alpine
+    container_name: pdfsuite_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+volumes:
+  redis_data:

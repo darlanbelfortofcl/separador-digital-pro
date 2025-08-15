@@ -1,11 +1,35 @@
-<!doctype html><html lang="pt-br" data-theme="dark"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Separador Digital Pro</title><meta name="author" content="Darlan Oliveira Ferreira Belfort"/>
-<link rel="icon" href="/static/img/icon.png"><link rel="stylesheet" href="/static/css/style.css"></head>
-<body><canvas id="trail"></canvas>
-<header class="topbar"><a class="brand" href="/">Separador Digital Pro</a>
-<nav class="nav"><a href="/converter">Converter</a><a href="/dividir">Dividir</a><a href="/mesclar">Mesclar</a><a href="/extrair">Extrair</a><a href="/comprimir">Comprimir</a></nav>
-<button id="themeToggle">🌓</button></header>
-<main class="container">{% block content %}{% endblock %}</main>
-<footer class="footer"><p>Criado por <strong>Darlan Oliveira Ferreira Belfort</strong></p></footer>
-<script src="/static/js/trail.js"></script><script src="/static/js/theme.js"></script>{% block scripts %}{% endblock %}</body></html>
+<!doctype html>
+<html lang="pt-br" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}PDF Suite{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <script defer src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/uploader.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/generic_action.js') }}"></script>
+</head>
+<body>
+  <header class="app-header" role="banner">
+    <div class="container header-inner">
+      <div class="brand" role="img" aria-label="PDF Suite">📄</div>
+      <nav class="nav" role="navigation" aria-label="Menu principal">
+        <a href="{{ url_for('index') }}" class="nav-link">Início</a>
+        <a href="{{ url_for('converter') }}" class="nav-link">Conversor</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Alternar tema" title="Tema">
+          <span class="icon-sun" aria-hidden="true">☀️</span>
+          <span class="icon-moon" aria-hidden="true">🌙</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+  <main class="container" role="main">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="app-footer" role="contentinfo">
+    <div class="container">Feito com ❤️ — Acessível e performático</div>
+  </footer>
+</body>
+</html>

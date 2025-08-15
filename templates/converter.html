@@ -1,40 +1,22 @@
-
-<!doctype html>
-<html lang="pt-br">
-<head>
-  
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Separador Digital Pro</title>
-<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-<script defer src="{{ url_for('static', filename='js/trail.js') }}"></script>
-
-  <script defer src="{{ url_for('static', filename='js/script_converter.js') }}"></script>
-</head>
-<body class="bg">
-  <div class="mouse-layer"></div>
-  <header class="container">
-    <a href="{{ url_for('home') }}" class="back">← Voltar</a>
-    <h1>Converter</h1>
-    <p>PDF → DOCX <strong>editável</strong> (modo turbo).</p>
-  </header>
-
-  <main class="container panel">
-    <form id="form-converter" class="form">
-      <input type="hidden" id="mode" name="mode" value="pdf2docx">
-      <label for="fileConv">Arquivo PDF</label>
-      <input type="file" id="fileConv" name="arquivo" accept=".pdf" required>
-
-      <button class="btn" type="submit">Converter</button>
-      <div class="loading" id="loading" hidden></div>
-
-      <div class="progress" aria-hidden="true">
-        <div class="bar" id="bar"></div>
-      </div>
-      <div class="status" id="status"></div>
-      <div id="download"></div>
-    </form>
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}PDF → DOCX (com OCR opcional){% endblock %}
+{% block content %}
+<article class="card" role="region" aria-labelledby="conv-title">
+  <h2 id="conv-title">Converter PDF para DOCX</h2>
+  <p>Extração direta de texto (rápida) ou OCR com Tesseract (melhor para PDFs escaneados).</p>
+  <form id="form-convert" class="upload-form" aria-label="Converter PDF para DOCX">
+    <div class="upload-area" data-target="pdf-to-docx" tabindex="0" role="button" aria-label="Escolher PDF para converter">
+      <input type="file" name="arquivos" accept=".pdf" aria-label="Selecionar PDF" />
+      <p>Solte ou clique para selecionar</p>
+      <ul class="file-list" aria-live="polite"></ul>
+    </div>
+    <label class="switch">
+      <input type="checkbox" name="ocr" />
+      <span>Habilitar OCR (Tesseract)</span>
+    </label>
+    <button class="btn primary" data-action="pdf-to-docx">Converter</button>
+    <div class="progress"><div class="bar"></div></div>
+    <div class="result" id="convert-result"></div>
+  </form>
+</article>
+{% endblock %}

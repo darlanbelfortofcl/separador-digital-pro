@@ -1,65 +1,66 @@
-
 :root{
-  --bg:#0b1020;
-  --card:#0f172a;
-  --muted:#8ea0b8;
-  --text:#e6edf5;
-  --primary:#22d3ee;
-  --success:#22c55e;
-  --danger:#ef4444;
-  --border:#1f2a44;
-  --shadow:0 10px 25px rgba(0,0,0,.35);
+  --bg: #0b1220; /* slate dark baseline */
+  --bg-card: #111827;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --primary: #60a5fa;
+  --primary-700:#1d4ed8;
+  --accent: #34d399;
+  --border: #334155;
+  --highlight:#f59e0b;
+}
+[data-theme="light"]{
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --text: #0f172a;
+  --muted: #475569;
+  --primary: #2563eb;
+  --primary-700:#1d4ed8;
+  --accent: #16a34a;
+  --border: #e2e8f0;
+  --highlight:#f97316;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:radial-gradient(1200px 600px at 20% -10%, rgba(34,211,238,.12), transparent), radial-gradient(900px 500px at 110% 10%, rgba(34,197,94,.08), transparent), var(--bg);color:var(--text);font:16px/1.5 system-ui,Segoe UI,Roboto}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',sans-serif;line-height:1.4}
+.container{width:100%;max-width:1100px;margin:0 auto;padding:1rem}
+.app-header{border-bottom:1px solid var(--border)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.brand{font-size:1.5rem}
+.nav{display:flex;gap:.75rem;align-items:center}
+.nav-link{color:var(--text);text-decoration:none;padding:.4rem .6rem;border-radius:.5rem}
+.nav-link:hover{background:color-mix(in oklab, var(--primary) 20%, transparent)}
+.theme-toggle{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:.6rem;padding:.4rem .6rem;cursor:pointer}
+.theme-toggle:hover{border-color:var(--primary)}
 
-.container{max-width:980px;margin:0 auto;padding:20px}
-header{text-align:center;padding:32px 20px}
-h1{margin:.2rem 0 0.4rem;font-size:clamp(1.6rem, 2.2vw + 1rem, 2.4rem)}
-h1 span{color:var(--primary)}
-p{color:var(--muted);margin:0.2rem 0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
+@media (max-width: 960px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width: 640px){.grid{grid-template-columns:1fr}}
 
-.grid{display:grid;grid-template-columns:1fr;gap:18px}
-@media (min-width:720px){ .grid{grid-template-columns:1fr 1fr} }
-
-.card{background:linear-gradient(180deg, #0d152b, #0b1224); border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:var(--shadow); text-decoration:none; color:var(--text); display:flex; flex-direction:column; align-items:flex-start; gap:10px; transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease}
-.card .icon{width:44px;height:44px; display:grid; place-items:center; color:var(--primary); opacity:.9}
-.card .icon svg{width:28px;height:28px}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:1rem;box-shadow:0 10px 20px rgb(0 0 0 / .08);display:flex;flex-direction:column;gap:.75rem}
 .card h2{margin:.2rem 0}
-.card:hover{transform:translateY(-4px); box-shadow:0 16px 40px rgba(34,211,238,.12); border-color:#19314b}
 
-.panel{background:linear-gradient(180deg, #0d152b, #0b1224); border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:var(--shadow)}
+.upload-form{display:flex;flex-direction:column;gap:.75rem}
+.upload-area{display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed var(--border);border-radius:.75rem;min-height:140px;padding:1rem;text-align:center;transition:border-color .25s, box-shadow .25s, transform .1s;outline:none}
+.upload-area:hover{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in oklab, var(--primary) 25%, transparent)}
+.upload-area:focus{box-shadow:0 0 0 3px color-mix(in oklab, var(--primary) 45%, transparent)}
+.upload-area input[type=file]{display:none}
+.file-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+.file-list li{display:flex;align-items:center;gap:.5rem;opacity:0;animation:fadeIn .3s forwards}
+.file-badge{background:var(--highlight);color:white;font-weight:700;border-radius:.25rem;padding:.1rem .3rem;font-size:.8rem}
 
-.form{display:grid; gap:12px}
-label{color:#bfd0e6}
-input[type=file], select{width:100%; padding:12px; border-radius:12px; border:1px solid var(--border); background:#0b1324; color:var(--text); outline:none}
-input[type=file]:focus, select:focus{border-color:#2f8fb3; box-shadow:0 0 0 3px rgba(34,211,238,.15)}
+.btn{border:none;border-radius:.6rem;padding:.7rem 1rem;cursor:pointer;color:white;background:var(--accent);transition:transform .1s, filter .2s}
+.btn:hover{filter:brightness(1.05)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--primary)}
+.btn.primary:hover{filter:brightness(1.1)}
 
-.btn{margin-top:6px; padding:12px 16px; border:0; border-radius:12px; background:linear-gradient(180deg, #26d7f1, #20c7e2); color:#00141a; font-weight:800; cursor:pointer; transition:transform .15s ease, filter .2s ease}
-.btn:hover{transform:translateY(-1px); filter:brightness(1.04)}
-.btn:active{transform:translateY(0) scale(.98)}
+.progress{height:10px;background:color-mix(in oklab, var(--border) 80%, transparent);border-radius:.5rem;overflow:hidden}
+.progress .bar{height:100%;width:0;background:linear-gradient(90deg,var(--primary),color-mix(in oklab, var(--primary) 60%, var(--accent)));transition:width .35s}
 
-.back{display:inline-block; color:var(--muted); text-decoration:none; margin-bottom:6px}
-.back:hover{color:var(--text)}
+.switch{display:flex;align-items:center;gap:.5rem}
 
-.loading{width:24px; height:24px; border-radius:50%; border:3px solid rgba(255,255,255,.18); border-top-color:var(--primary); animation:spin 1s linear infinite; margin-top:6px}
-[hidden]{display:none !important}
-@keyframes spin{to{transform:rotate(360deg)}}
+.app-footer{border-top:1px solid var(--border);margin-top:2rem;padding:1rem 0;color:var(--muted);text-align:center}
 
-.progress{position:relative; height:12px; background:#0c1428; border:1px solid var(--border); border-radius:999px; overflow:hidden; margin-top:10px}
-.bar{height:100%; width:0%; background:linear-gradient(90deg, var(--primary), #7ee3f2); transition:width .25s ease}
-.bar.done{background:linear-gradient(90deg, var(--success), #58e39a)}
-.bar.error{background:linear-gradient(90deg, var(--danger), #ff7b7b)}
-
-.status{margin-top:8px; color:#cbd5e1; min-height:24px}
-#download a{display:inline-block; margin-top:12px; padding:10px 12px; border-radius:10px; background:linear-gradient(180deg, #22c55e, #1fb457); color:#042012; text-decoration:none; font-weight:700}
-
-.fade-in{animation:fade .5s ease both}
-.fade-in-up{animation:up .6s ease both}
-@keyframes fade{from{opacity:0} to{opacity:1}}
-@keyframes up{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
-
-.mouse-layer{position:fixed; inset:0; pointer-events:none; overflow:hidden}
-.dot{position:absolute; width:8px; height:8px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #7ee3f2, rgba(34,211,238,.2)); filter:blur(.3px); opacity:.9; transform:translate(-50%,-50%); animation: fadeDot .8s ease-out forwards}
-@keyframes fadeDot{to{opacity:0; transform:translate(-50%,-50%) scale(0.3)}}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
