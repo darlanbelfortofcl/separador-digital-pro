@@ -1,6 +1,9 @@
-Flask==3.0.3
-Werkzeug==3.0.3
-pdf2docx==0.5.8
-PyPDF2==3.0.1
-gunicorn==22.0.0
-docx2pdf==0.1.8
+Flask
+gunicorn
+PyPDF2
+pdf2docx
+python-docx
+docx2pdf
+python-dotenv
+APScheduler
+pytest

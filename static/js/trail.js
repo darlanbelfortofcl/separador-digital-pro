@@ -1,1 +1,13 @@
-const c=document.getElementById('trail'),x=c.getContext('2d');let d=[];function r(){c.width=innerWidth;c.height=innerHeight}r();addEventListener('resize',r);addEventListener('mousemove',e=>{d.push({x:e.clientX,y:e.clientY,a:1})});function loop(){x.clearRect(0,0,c.width,c.height);for(let i=d.length-1;i>=0;i--){let p=d[i];x.beginPath();x.arc(p.x,p.y,3,0,6.28);x.fillStyle=`rgba(110,255,207,${p.a})`;x.fill();p.a-=.02;if(p.a<=0)d.splice(i,1)}requestAnimationFrame(loop)}loop();
+
+(function(){
+  const layer = document.querySelector('.mouse-layer');
+  if(!layer) return;
+  window.addEventListener('mousemove', (e)=>{
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.style.left = e.clientX + 'px';
+    d.style.top = e.clientY + 'px';
+    layer.appendChild(d);
+    setTimeout(()=> d.remove(), 800);
+  }, {passive:true});
+})();
