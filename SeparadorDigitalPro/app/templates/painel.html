@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <form id="pdf-form" class="row" enctype="multipart/form-data">
+    <label class="muted">Envie um PDF e escolha as páginas (ex: 1-3,5). Deixe em branco para todas.</label>
+    <div class="inline">
+      <input class="input" type="file" name="pdf" accept="application/pdf" required>
+      <input class="input" type="text" name="paginas" placeholder="Ex: 1-3,5">
+    </div>
+    <button class="btn" type="submit">Dividir PDF</button>
+    <div class="progress"><div class="bar"></div></div>
+    <div id="status" class="muted">Aguardando…</div>
+    <div id="download"></div>
+  </form>
+  <div class="row">
+    <div class="muted">Pré-visualização (miniaturas leves)</div>
+    <div id="thumbs" class="grid"></div>
+  </div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/app.js"></script>
+{% endblock %}
