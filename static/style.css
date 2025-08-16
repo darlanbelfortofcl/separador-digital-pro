@@ -1,0 +1,96 @@
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f4f4f4;
+  color: #333;
+  transition: background 0.3s, color 0.3s;
+}
+
+.container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h1 {
+  text-align: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input[type="file"], input[type="number"], input[type="password"] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  background: #4CAF50;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+button:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.flash p.error {
+  background: #fdecea;
+  color: #c62828;
+  border: 1px solid #c62828;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.flash p.success {
+  background: #e6f9ed;
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.9em;
+  color: #888;
+  transition: color 0.3s;
+}
+
+footer:hover {
+  color: #000;
+}
+
+.dark-mode {
+  background: #121212;
+  color: #f4f4f4;
+}
+
+.dark-mode .container {
+  background: #1e1e1e;
+  color: #f4f4f4;
+}
+
+.dark-mode button {
+  background: #333;
+  color: #f4f4f4;
+}
+
+.dark-mode button:hover {
+  background: #555;
+}
