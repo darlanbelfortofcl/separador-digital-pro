@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card center">
+  <h1 class="h1">Entrar</h1>
+  <p class="muted">Acesse sua conta para dividir PDFs.</p>
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  <form method="POST" class="form">
+    <label class="label">Usuário</label>
+    <input class="input" type="text" name="usuario" placeholder="Usuário" required>
+    <label class="label">Senha</label>
+    <input class="input" type="password" name="senha" placeholder="Senha" required>
+    <button class="btn primary w-full" type="submit">Entrar</button>
+  </form>
+</section>
+{% endblock %}

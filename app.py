@@ -1,164 +1,136 @@
-
-from flask import Flask, render_template, request, Response, jsonify, send_file
-import os, logging, threading, queue, json, uuid, zipfile, sys
+import os
+import uuid
+import threading
+import time
+from flask import Flask, render_template, request, redirect, url_for, session, send_file, jsonify, Response, abort
 from werkzeug.utils import secure_filename
-from processador import processar_pdf
-from conversor import convert_pdf_to_docx, convert_docx_to_pdf
+from utils import split_pdf_with_progress, allowed_file
+from io import BytesIO
 
-app = Flask(__name__, static_folder="static", template_folder="templates")
+app = Flask(__name__, static_url_path="/static", static_folder="app/static", template_folder="app/templates")
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
 
-logging.basicConfig(filename="processamento.log", level=logging.INFO, format="%(asctime)s %(levelname)s:%(message)s")
+LOGIN_USER = os.getenv("LOGIN_USER", "lucyta")
+LOGIN_PASS = os.getenv("LOGIN_PASS", "29031984bB@G")
 
-BASE_DIR = os.path.dirname(__file__)
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-OUTPUT_FOLDER = os.path.join(BASE_DIR, "outputs")
+UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "uploads")
+OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER", "outputs")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-job_queues = {}
+PROGRESS = {}
+RESULTS = {}
 
-def _worker_split(job_id, pdf_path, qualidade="ebook", timeout=60, threads=4, limpar=False):
-    q = job_queues[job_id]
-    try:
-        base = os.path.splitext(os.path.basename(pdf_path))[0]
-        pasta_destino = os.path.join(OUTPUT_FOLDER, f"{base}_paginas")
-        pasta_otimizada = os.path.join(pasta_destino, "otimizados")
-        os.makedirs(pasta_destino, exist_ok=True)
-        os.makedirs(pasta_otimizada, exist_ok=True)
+def login_required(fn):
+    from functools import wraps
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not session.get("logged_in"):
+            return redirect(url_for("login"))
+        return fn(*args, **kwargs)
+    return wrapper
 
-        q.put({"stage":"start", "msg":"Iniciando separação…", "atual":0, "total":100})
+@app.route("/", methods=["GET"])
+def root():
+    return redirect(url_for("login"))
 
-        def cb(nome, atual, total):
-            try:
-                pct = int((atual/total)*100) if total else 0
-            except Exception:
-                pct = 0
-            q.put({"stage":"progress","msg":f"{nome}: Página {atual}/{total}", "atual":pct, "total":100})
-
-        processar_pdf(pdf_path, pasta_destino, pasta_otimizada, qualidade=qualidade, timeout=timeout, limpar=limpar, threads=threads, callback=cb)
-
-        zip_name = os.path.join(OUTPUT_FOLDER, f"{base}_paginas.zip")
-        with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zf:
-            for rootp, _, files in os.walk(pasta_destino):
-                for f in files:
-                    fp = os.path.join(rootp, f)
-                    rel = os.path.relpath(fp, pasta_destino)
-                    zf.write(fp, rel)
-
-        q.put({"done": True, "msg": "Separação concluída ✅", "atual":100, "total":100, "download": zip_name})
-    except Exception as e:
-        q.put({"error": True, "msg": f"Erro: {e}"})
-        q.put({"done": True})
-
-def _worker_convert(job_id, src_path, mode):
-    q = job_queues[job_id]
-    try:
-        base, ext = os.path.splitext(os.path.basename(src_path))
-        q.put({"stage":"start","msg":"Preparando conversão (modo turbo editável)…","atual":1,"total":100})
-
-        if mode == "pdf2docx":
-            out_path = os.path.join(OUTPUT_FOLDER, f"{base}.docx")
-            def cb(pct, msg=None):
-                payload = {"stage":"progress", "atual": int(pct), "total":100}
-                if msg: payload["msg"] = msg
-                q.put(payload)
-            convert_pdf_to_docx(src_path, out_path, turbo=True, callback=cb)
-        elif mode == "docx2pdf":
-            out_path = os.path.join(OUTPUT_FOLDER, f"{base}.pdf")
-            convert_docx_to_pdf(src_path, out_path)
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        user = request.form.get("usuario", "").strip()
+        pwd = request.form.get("senha", "").strip()
+        if user == LOGIN_USER and pwd == LOGIN_PASS:
+            session["logged_in"] = True
+            return redirect(url_for("painel"))
         else:
-            raise ValueError("Modo inválido")
+            error = "Usuário ou senha inválidos."
+    return render_template("login.html", error=error)
 
-        q.put({"done": True, "msg": "Conversão concluída ✅", "atual":100, "total":100, "download": out_path})
-    except Exception as e:
-        q.put({"error": True, "msg": f"Erro na conversão: {e}"})
-        q.put({"done": True})
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
-@app.route("/")
-def home():
+@app.route("/painel", methods=["GET"])
+@login_required
+def painel():
     return render_template("index.html")
 
-@app.route("/converter")
-def pagina_converter():
-    return render_template("converter.html")
-
-@app.route("/dividir")
-def pagina_dividir():
-    return render_template("dividir.html")
-
-@app.route("/convert", methods=["POST"])
-def convert():
-    mode = request.form.get("mode")
-    file = request.files.get("arquivo")
-    if mode not in ("pdf2docx", "docx2pdf"):
-        return jsonify({"ok": False, "error": "Modo inválido."}), 400
-    if not file or not file.filename:
-        return jsonify({"ok": False, "error": "Selecione um arquivo."}), 400
+@app.route("/processar", methods=["POST"])
+@login_required
+def processar():
+    if "pdf" not in request.files:
+        return jsonify({"ok": False, "msg": "Nenhum arquivo enviado."}), 400
+    file = request.files["pdf"]
+    if file.filename == "":
+        return jsonify({"ok": False, "msg": "Selecione um arquivo PDF."}), 400
 
     filename = secure_filename(file.filename)
-    src_path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(src_path)
+    if not allowed_file(filename):
+        return jsonify({"ok": False, "msg": "Arquivo inválido. Envie um PDF."}), 400
 
-    job_id = uuid.uuid4().hex
-    q = queue.Queue()
-    job_queues[job_id] = q
-    t = threading.Thread(target=_worker_convert, args=(job_id, src_path, mode), daemon=True)
-    t.start()
+    job_id = str(uuid.uuid4())
+    PROGRESS[job_id] = {"percent": 0, "status": "Iniciando...", "filename": filename}
+    RESULTS.pop(job_id, None)
 
+    save_path = os.path.join(UPLOAD_FOLDER, f"{job_id}_{filename}")
+    file.save(save_path)
+
+    ranges = request.form.get("paginas", "").strip()
+    def worker():
+        try:
+            out_zip_path = os.path.join(OUTPUT_FOLDER, f"{job_id}_split.zip")
+            split_pdf_with_progress(
+                input_path=save_path,
+                output_zip_path=out_zip_path,
+                progress_callback=lambda p, s: PROGRESS[job_id].update({"percent": p, "status": s}),
+                ranges=ranges or None
+            )
+            PROGRESS[job_id]["percent"] = 100
+            PROGRESS[job_id]["status"] = "Concluído"
+            RESULTS[job_id] = out_zip_path
+        except Exception as e:
+            PROGRESS[job_id]["status"] = f"Erro: {e}"
+            PROGRESS[job_id]["percent"] = 0
+
+    threading.Thread(target=worker, daemon=True).start()
     return jsonify({"ok": True, "job_id": job_id})
 
-@app.route("/process", methods=["POST"])
-def process():
-    qualidade = request.form.get("qualidade", "ebook")
-    timeout = int(request.form.get("timeout", 60))
-    threads = int(request.form.get("threads", 4))
-    limpar = "limpar" in request.form
-    arquivo_pdf = request.files.get("arquivo_pdf")
+@app.route("/eventos/<job_id>")
+@login_required
+def eventos(job_id):
+    def stream():
+        while True:
+            if job_id not in PROGRESS:
+                yield "event: error\ndata: Job não encontrado\n\n"
+                break
+            data = PROGRESS[job_id]
+            percent = int(data.get("percent", 0))
+            status = data.get("status", "")
+            payload = {"percent": percent, "status": status}
+            yield f"data: {payload}\n\n"
+            if percent >= 100 and job_id in RESULTS:
+                download_url = url_for("baixar", job_id=job_id)
+                payload_done = {"percent": 100, "status": "Concluído", "download": download_url}
+                yield f"data: {payload_done}\n\n"
+                break
+            time.sleep(0.5)
+    return Response(stream(), mimetype="text/event-stream")
 
-    if not arquivo_pdf or not arquivo_pdf.filename:
-        return jsonify({"ok": False, "error": "Selecione um arquivo PDF."}), 400
+@app.route("/baixar/<job_id>")
+@login_required
+def baixar(job_id):
+    if job_id not in RESULTS:
+        abort(404)
+    path = RESULTS[job_id]
+    if not os.path.exists(path):
+        abort(404)
+    return send_file(path, as_attachment=True, download_name=os.path.basename(path))
 
-    filename = secure_filename(arquivo_pdf.filename)
-    caminho_pdf = os.path.join(UPLOAD_FOLDER, filename)
-    arquivo_pdf.save(caminho_pdf)
-
-    job_id = uuid.uuid4().hex
-    q = queue.Queue()
-    job_queues[job_id] = q
-    t = threading.Thread(target=_worker_split, args=(job_id, caminho_pdf, qualidade, timeout, threads, limpar), daemon=True)
-    t.start()
-
-    return jsonify({"ok": True, "job_id": job_id})
-
-@app.route("/stream")
-def stream():
-    job_id = request.args.get("job")
-    if not job_id or job_id not in job_queues:
-        return Response("job inválido\n", status=400)
-
-    q = job_queues[job_id]
-
-    def event_stream():
-        done = False
-        while not done:
-            try:
-                item = q.get(timeout=5)
-                if isinstance(item, dict):
-                    if item.get("done"):
-                        done = True
-                    yield "data: " + json.dumps(item, ensure_ascii=False) + "\n\n"
-            except queue.Empty:
-                yield ": ping\n\n"
-        job_queues.pop(job_id, None)
-
-    return Response(event_stream(), mimetype="text/event-stream")
-
-@app.route("/download")
-def download():
-    path = request.args.get("path")
-    if not path or not os.path.exists(path):
-        return "Arquivo não encontrado", 404
-    return send_file(path, as_attachment=True)
+@app.route("/health")
+def health():
+    return {"ok": True}
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=True)
