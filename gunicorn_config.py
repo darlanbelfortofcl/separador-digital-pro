@@ -1,4 +1,7 @@
-bind = "0.0.0.0:5000"
-workers = 2
+
+bind = "0.0.0.0:10000"
+workers = 1
 threads = 4
-timeout = 120
+timeout = 180
+graceful_timeout = 30
+keepalive = 10

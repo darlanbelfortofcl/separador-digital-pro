@@ -1,22 +1,59 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divisor de PDFs</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="icon" href="/static/favicon.ico">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Separador Digital Pro</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Divisor de PDFs</h1>
-        <form id="uploadForm" enctype="multipart/form-data">
-            <input type="file" id="fileInput" name="files" multiple accept="application/pdf">
-            <button type="submit">Enviar</button>
-        </form>
-        <div id="status"></div>
-        <a id="downloadLink" style="display:none;">Baixar Arquivo ZIP</a>
-    </div>
-    <script src="/static/script.js"></script>
+  <main class="wrap">
+    <header class="topbar">
+      <h1>Separador Digital Pro</h1>
+      <button id="themeToggle" class="chip" aria-label="Alternar tema">🌙</button>
+    </header>
+
+    <section class="card">
+      <label id="dropzone" class="drop" for="fileInput">
+        <div class="cloud">☁️</div>
+        <div class="title">Arraste seus PDFs aqui</div>
+        <div class="subtitle">ou <span class="link">clique para selecionar</span></div>
+        <input id="fileInput" type="file" accept="application/pdf" multiple hidden>
+      </label>
+
+      <div id="fileList" class="list"></div>
+
+      <div class="actions">
+        <button id="startBtn" class="btn primary" disabled>Enviar & dividir</button>
+        <button id="clearBtn" class="btn ghost">Limpar</button>
+      </div>
+
+      <div id="uploadProgress" class="progress" hidden>
+        <div class="bar"><span id="barFill" style="width:0%"></span></div>
+        <div id="progressText" class="progress-text">Enviando 0%</div>
+      </div>
+
+      <div id="processing" class="processing" hidden>
+        <div class="spinner"></div>
+        <p id="statusText">Processando...</p>
+      </div>
+
+      <div id="results" class="results" hidden>
+        <div class="success">✅ Pronto! Baixe seus arquivos:</div>
+        <div class="downloads">
+          <a id="zipLink" class="btn primary" href="#" download>⬇️ Baixar ZIP</a>
+        </div>
+        <div id="filesOut" class="files-out"></div>
+      </div>
+
+      <div id="feedback" class="feedback" hidden></div>
+    </section>
+
+    <footer class="foot">Criado por <strong>Darlan Oliveira Ferreira Belfort</strong></footer>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

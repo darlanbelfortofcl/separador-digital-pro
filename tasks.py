@@ -1,40 +1,54 @@
+
 import os
-import uuid
 import zipfile
 from PyPDF2 import PdfReader, PdfWriter
 
-jobs = {}
-
-def start_multi_split_job(files, output_folder):
-    job_id = str(uuid.uuid4())
-    jobs[job_id] = {"status": "em fila", "progress": 0, "result": None}
+def process_job_thread(job_id: str, input_files: list[str], output_dir: str, JOBS: dict):
     try:
-        output_files = []
-        for file in files:
-            reader = PdfReader(file)
-            for i, page in enumerate(reader.pages):
-                writer = PdfWriter()
-                writer.add_page(page)
-                out_path = os.path.join(output_folder, f"{os.path.splitext(os.path.basename(file))[0]}_page_{i+1}.pdf")
-                with open(out_path, "wb") as f_out:
-                    writer.write(f_out)
-                output_files.append(out_path)
+        JOBS[job_id]["status"] = "started"
+        total_pages = 0
+        for f in input_files:
+            try:
+                reader = PdfReader(f)
+                total_pages += len(reader.pages)
+            except Exception:
+                pass
 
-        zip_path = os.path.join(output_folder, f"{job_id}.zip")
-        with zipfile.ZipFile(zip_path, "w") as zipf:
-            for f in output_files:
-                zipf.write(f, os.path.basename(f))
+        done = 0
+        out_files = []
 
-        jobs[job_id] = {"status": "concluído", "progress": 100, "result": zip_path}
-    except Exception as e:
-        jobs[job_id] = {"status": "erro", "progress": 0, "result": None}
-    return job_id
+        for f in input_files:
+            base = os.path.splitext(os.path.basename(f))[0]
+            try:
+                reader = PdfReader(f)
+                for i, page in enumerate(reader.pages, start=1):
+                    writer = PdfWriter()
+                    writer.add_page(page)
+                    out_name = f"{base}_pagina_{i}.pdf"
+                    out_path = os.path.join(output_dir, out_name)
+                    with open(out_path, "wb") as out_f:
+                        writer.write(out_f)
+                    out_files.append(out_name)
+                    done += 1
+                    if total_pages:
+                        JOBS[job_id]["progress"] = int((done / total_pages) * 100)
+            except Exception:
+                errs = JOBS[job_id].get("errors", [])
+                errs.append(base)
+                JOBS[job_id]["errors"] = errs
 
-def get_job_status(job_id):
-    return jobs.get(job_id)
+        # cria zip final
+        zip_path = os.path.join(output_dir, "pdfs_divididos.zip")
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+            for name in out_files:
+                full = os.path.join(output_dir, name)
+                if os.path.exists(full):
+                    z.write(full, arcname=name)
 
-def get_job_result(job_id):
-    job = jobs.get(job_id)
-    if job and job["status"] == "concluído":
-        return job["result"]
-    return None
+        JOBS[job_id]["files"] = out_files
+        JOBS[job_id]["status"] = "finished"
+        JOBS[job_id]["progress"] = 100
+        JOBS[job_id]["result"] = zip_path
+    except Exception:
+        JOBS[job_id]["status"] = "failed"
+        JOBS[job_id]["progress"] = 0
