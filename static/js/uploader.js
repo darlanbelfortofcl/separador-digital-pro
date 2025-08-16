@@ -1,1 +1,16 @@
-(function(){function setupUpload(form){const area=form.querySelector('.upload-area');const input=area.querySelector('input[type=file]');const list=area.querySelector('.file-list');const preview=form.querySelector('.preview');function render(){list.innerHTML='';[...input.files].forEach(f=>{const li=document.createElement('li');const b=document.createElement('span');b.className='file-badge';b.textContent='PDF';const t=document.createElement('span');t.textContent=f.name;li.appendChild(b);li.appendChild(t);list.appendChild(li);});if(window.renderPdfPreview) window.renderPdfPreview(input, preview);}area.addEventListener('click',()=>input.click());input.addEventListener('change',render);area.addEventListener('dragover',e=>{e.preventDefault();area.classList.add('drag');});area.addEventListener('dragleave',()=>area.classList.remove('drag'));area.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files?.length){input.files=e.dataTransfer.files;render();}area.classList.remove('drag');});}document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('form.upload-form').forEach(setupUpload);});})();
+document.addEventListener('DOMContentLoaded', () => {
+  const forms = ['form-convert','form-split','form-merge']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+
+  forms.forEach(form => {
+    form.addEventListener('submit', (e) => {
+      // deixamos o submit padrão acontecer para download direto
+      const btn = form.querySelector('button');
+      btn.disabled = true;
+      const old = btn.textContent;
+      btn.textContent = 'Processando...';
+      setTimeout(()=>{ btn.disabled=false; btn.textContent = old; }, 6000);
+    });
+  });
+});

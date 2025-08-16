@@ -1,41 +1,36 @@
-{% extends 'base.html' %}
-{% block title %}Ferramentas PDF{% endblock %}
+{% extends "base.html" %}
 {% block content %}
-<section class='grid'>
-  <article class='card'><h2>Dividir PDF</h2>
-    <form class='upload-form' id='form-split'>
-      <div class='upload-area touch-big' data-target='split'>
-        <input type='file' name='arquivos' accept='.pdf'>
-        <p>Solte ou toque para selecionar</p><ul class='file-list'></ul>
-      </div>
-      <div class='preview' aria-live='polite'></div>
-      <button class='btn primary' data-action='split'>Dividir</button>
-      <div class='progress'><div class='bar'></div></div>
-      <div class='result'></div>
+<section class="grid">
+  <article class="card">
+    <h2>PDF → DOCX (editável)</h2>
+    <form id="form-convert" action="/api/convert" method="post" enctype="multipart/form-data">
+      <label class="dropzone">
+        <input type="file" name="file" accept="application/pdf" required>
+        <span>Solte um PDF aqui ou clique</span>
+      </label>
+      <button class="btn primary">Converter</button>
     </form>
   </article>
-  <article class='card'><h2>Mesclar PDFs</h2>
-    <form class='upload-form' id='form-merge'>
-      <div class='upload-area touch-big' data-target='merge'>
-        <input type='file' name='arquivos' accept='.pdf' multiple>
-        <p>Solte ou toque para selecionar</p><ul class='file-list'></ul>
-      </div>
-      <div class='preview' aria-live='polite'></div>
-      <button class='btn primary' data-action='merge'>Mesclar</button>
-      <div class='progress'><div class='bar'></div></div>
-      <div class='result'></div>
+
+  <article class="card">
+    <h2>Dividir PDFs</h2>
+    <form id="form-split" action="/api/split" method="post" enctype="multipart/form-data">
+      <label class="dropzone">
+        <input type="file" name="files" accept="application/pdf" multiple required>
+        <span>Solte 1+ PDFs aqui ou clique</span>
+      </label>
+      <button class="btn primary">Dividir (gera ZIP)</button>
     </form>
   </article>
-  <article class='card'><h2>Comprimir PDF</h2>
-    <form class='upload-form' id='form-compress'>
-      <div class='upload-area touch-big' data-target='compress'>
-        <input type='file' name='arquivos' accept='.pdf'>
-        <p>Solte ou toque para selecionar</p><ul class='file-list'></ul>
-      </div>
-      <div class='preview' aria-live='polite'></div>
-      <button class='btn primary' data-action='compress'>Comprimir</button>
-      <div class='progress'><div class='bar'></div></div>
-      <div class='result'></div>
+
+  <article class="card">
+    <h2>Mesclar PDFs</h2>
+    <form id="form-merge" action="/api/merge" method="post" enctype="multipart/form-data">
+      <label class="dropzone">
+        <input type="file" name="files" accept="application/pdf" multiple required>
+        <span>Solte 2+ PDFs aqui ou clique</span>
+      </label>
+      <button class="btn primary">Mesclar</button>
     </form>
   </article>
 </section>
