@@ -1,63 +1,177 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Separador de PDF</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-            background-color: #f4f4f9;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        input, button {
-            margin: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        footer {
-            position: absolute;
-            bottom: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Separador Digital Pro</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+  <style>
+    :root{
+      --bg:#1a1a1a; --fg:#f0f0f0; --muted:#b8b8b8;
+      --accent:#00bcd4; --accent-700:#0097a7;
+      --card:#232323; --border:#2e2e2e;
+    }
+    body.light{
+      --bg:#f8f9fa; --fg:#212529; --muted:#6c757d;
+      --accent:#00bcd4; --accent-700:#0097a7;
+      --card:#ffffff; --border:#e9ecef;
+    }
+    *{box-sizing:border-box; transition: color .3s ease, background-color .3s ease, transform .3s ease, border-color .3s ease;}
+    body{
+      margin:0; min-height:100vh; background:var(--bg); color:var(--fg);
+      display:flex; align-items:center; justify-content:center; padding:24px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+      animation: fadeUp .6s ease;
+    }
+    .wrap{width:100%; max-width:720px; display:flex; flex-direction:column; gap:16px; align-items:center;}
+    h1{margin:0 0 8px 0; font-size:clamp(1.4rem, 2.2vw, 2rem);}
+    .card{
+      width:100%; background:var(--card); border:1px solid var(--border);
+      border-radius:16px; padding:20px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      animation: fadeUp .8s ease;
+    }
+    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center;}
+    .upload{
+      border:2px dashed var(--accent); border-radius:14px; padding:28px; text-align:center; cursor:pointer;
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+    }
+    .upload:hover{ transform: scale(1.02); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+    .upload input{ display:none; }
+    .hint{color:var(--muted); font-size:.95rem; margin-top:8px;}
+    .btn{
+      background:var(--accent); color:white; border:none; border-radius:12px; padding:12px 18px; cursor:pointer; font-weight:700;
+      box-shadow: 0 6px 18px rgba(0,188,212,.2);
+    }
+    .btn:hover{ transform: scale(1.03); background:var(--accent-700); }
+    .ghost{ background:transparent; color:var(--fg); border:1px solid var(--border); }
+    .ghost:hover{ border-color:var(--accent); }
+    .toolbar{display:flex; width:100%; justify-content:space-between; align-items:center;}
+    .theme{border-radius:999px; padding:8px 14px;}
+    .list{margin-top:10px; display:flex; flex-direction:column; gap:6px; font-size:.95rem;}
+    .file-item{display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(255,255,255,.03); padding:10px; border-radius:10px; border:1px solid var(--border);}
+    .file-item .name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65%;}
+    .downloads{margin-top:14px;}
+    .downloads ul{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px;}
+    .downloads li{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.03);}
+    .downloads a{color:var(--accent); text-decoration:none; font-weight:700;}
+    .downloads a:hover{text-decoration:underline;}
+    .progress{display:none; align-items:center; gap:10px; margin-top:10px;}
+    .spinner{width:28px; height:28px; border:4px solid rgba(255,255,255,.12); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite;}
+    .msg{font-size:.95rem; color:var(--muted);}
+    footer{margin-top:10px; color:var(--muted); text-align:center;}
+    @keyframes fadeUp{ from{opacity:0; transform: translateY(14px)} to{opacity:1; transform:none} }
+    @keyframes spin{ to{ transform: rotate(360deg)} }
+    @media (max-width:520px){
+      .toolbar{flex-direction:column; gap:8px; align-items:stretch}
+      .file-item .name{max-width:60%}
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Separador de PDF</h2>
-        <form method="POST" action="/divide" enctype="multipart/form-data">
-            <input type="file" name="pdfs" multiple required><br>
-            <input type="text" name="pages" placeholder="Ex: 1,3,5" required><br>
-            <button type="submit">Dividir PDFs</button>
-        </form>
+  <div class="wrap">
+    <div class="toolbar">
+      <h1>Separador Digital Pro</h1>
+      <button id="themeBtn" class="btn theme ghost" title="Alternar tema">🌙</button>
     </div>
-    <footer>
-        Criado por Darlan Oliveira Ferreira Belfort
-    </footer>
+
+    <div class="card">
+      <label class="upload" id="drop" for="fileInput">
+        <div>☁️ Arraste seus PDFs ou <strong>clique para enviar</strong></div>
+        <div class="hint">Aceita múltiplos arquivos .pdf</div>
+        <input type="file" id="fileInput" accept="application/pdf" multiple>
+      </label>
+
+      <div class="list" id="fileList"></div>
+
+      <div class="row" style="justify-content:flex-end;">
+        <button id="splitBtn" class="btn">Dividir PDFs</button>
+      </div>
+
+      <div class="progress" id="progress">
+        <div class="spinner"></div>
+        <div class="msg">Processando...</div>
+      </div>
+
+      <div class="downloads" id="downloads"></div>
+    </div>
+
+    <footer>Criado por <strong>Darlan Oliveira Ferreira Belfort</strong></footer>
+  </div>
+
+  <script>
+    // Tema persistente
+    const body = document.body;
+    const themeBtn = document.getElementById('themeBtn');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if(savedTheme === 'light'){ body.classList.add('light'); themeBtn.textContent = '☀️'; } else { themeBtn.textContent = '🌙'; }
+    themeBtn.addEventListener('click', () => {
+      const isLight = body.classList.toggle('light');
+      themeBtn.textContent = isLight ? '☀️' : '🌙';
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    });
+
+    // Upload UI
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const splitBtn = document.getElementById('splitBtn');
+    const downloads = document.getElementById('downloads');
+    const progress = document.getElementById('progress');
+    const drop = document.getElementById('drop');
+
+    let files = [];
+
+    drop.addEventListener('dragover', (e)=>{ e.preventDefault(); drop.style.transform='scale(1.02)'; });
+    drop.addEventListener('dragleave', ()=>{ drop.style.transform='scale(1)'; });
+    drop.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      drop.style.transform='scale(1)';
+      files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+      renderFiles();
+    });
+
+    fileInput.addEventListener('change', () => {
+      files = Array.from(fileInput.files);
+      renderFiles();
+    });
+
+    function renderFiles(){
+      if(!files.length){ fileList.innerHTML = ''; return; }
+      fileList.innerHTML = files.map(f => \`<div class="file-item"><span class="name">📄 \${f.name}</span><span class="hint">\${(f.size/1024/1024).toFixed(2)} MB</span></div>\`).join('');
+    }
+
+    splitBtn.addEventListener('click', async () => {
+      if(!files.length){ alert('Selecione pelo menos um PDF.'); return; }
+      const fd = new FormData();
+      files.forEach(f => fd.append('files', f));
+
+      progress.style.display = 'flex';
+      downloads.innerHTML = '';
+
+      try {
+        const res = await fetch('/split', { method:'POST', body: fd });
+        if(!res.ok){ throw new Error('Falha ao processar.'); }
+        const data = await res.json();
+        progress.style.display = 'none';
+
+        if(data.error){ alert(data.error); return; }
+        if(!data.files || !data.files.length){ downloads.innerHTML = '<p class="hint">Nenhum arquivo gerado.</p>'; return; }
+
+        let html = '<ul>';
+        data.files.forEach(item => {
+          if(item.error){
+            html += \`<li>❌ \${item.name} — <span class="hint">\${item.error}</span></li>\`;
+          } else {
+            html += \`<li>✔️ \${item.name} <a href="\${item.url}" download>Baixar</a></li>\`;
+          }
+        });
+        html += '</ul>';
+        downloads.innerHTML = html;
+      } catch (e) {
+        progress.style.display = 'none';
+        alert('Erro: ' + e.message);
+      }
+    });
+  </script>
 </body>
 </html>
