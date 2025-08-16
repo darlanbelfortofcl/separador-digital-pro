@@ -1,156 +1,63 @@
-
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Separador Digital Pro</title>
-  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Separador de PDF</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            background-color: #f4f4f9;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        footer {
+            position: absolute;
+            bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
 </head>
-<body class="light">
-  <header class="header">
-    <div class="brand">Separador Digital Pro</div>
-    <div class="actions">
-      <button id="toggle-theme" class="btn ghost" title="Alternar tema">🌙</button>
-      <a class="btn danger" href="{{ url_for('logout') }}">Sair</a>
+<body>
+    <div class="container">
+        <h2>Separador de PDF</h2>
+        <form method="POST" action="/divide" enctype="multipart/form-data">
+            <input type="file" name="pdfs" multiple required><br>
+            <input type="text" name="pages" placeholder="Ex: 1,3,5" required><br>
+            <button type="submit">Dividir PDFs</button>
+        </form>
     </div>
-  </header>
-
-  <main class="container card">
-    <h2>Dividir PDFs</h2>
-    <form id="form-split" class="form" onsubmit="enviar(event)">
-      <label class="file">
-        <span>Selecione um ou mais PDFs</span>
-        <input type="file" name="pdf_files" accept="application/pdf" multiple required />
-      </label>
-
-      <div class="options">
-        <label><input type="radio" name="modo" value="todas" checked /> Dividir tudo (cada página vira um PDF)</label>
-        <label><input type="radio" name="modo" value="intervalos" /> Intervalos personalizados</label>
-        <input type="text" id="intervalos" name="intervalos" placeholder="Ex.: 1-3,5,7-9" disabled />
-      </div>
-
-      <button type="submit" class="btn primary">Dividir</button>
-    </form>
-
-    <div id="progress" class="progress hidden">
-      <div class="bar" id="bar"></div>
-      <div class="percent" id="percent">0%</div>
-    </div>
-
-    <div id="status-area" class="status hidden"></div>
-
-    <section id="historico" class="history hidden">
-      <h3>Últimos arquivos</h3>
-      <ul id="lista-historico"></ul>
-    </section>
-  </main>
-
-  <div id="modal" class="modal hidden">
-    <div class="modal-content card">
-      <div id="modal-icon" class="modal-icon">✔️</div>
-      <div id="modal-text" class="modal-text">Processo concluído!</div>
-      <button class="btn" onclick="fecharModal()">Fechar</button>
-    </div>
-  </div>
-
-  <footer>
-    <p>Criado por <strong>Darlan Oliveira Ferreira Belfort</strong> — <a href="https://github.com/darlanbelfortofcl" target="_blank">GitHub</a></p>
-  </footer>
-
-  <script>
-    // Tema
-    const body = document.body;
-    const btnTheme = document.getElementById("toggle-theme");
-    const saved = localStorage.getItem("theme") || "light";
-    body.classList.add(saved);
-    btnTheme.textContent = saved === "dark" ? "☀️" : "🌙";
-    btnTheme.onclick = () => {
-      const now = body.classList.contains("dark") ? "dark" : "light";
-      const next = now === "dark" ? "light" : "dark";
-      body.classList.replace(now, next);
-      localStorage.setItem("theme", next);
-      btnTheme.textContent = next === "dark" ? "☀️" : "🌙";
-    };
-
-    // Habilita/Desabilita intervalos
-    const radios = document.querySelectorAll('input[name="modo"]');
-    const intervalos = document.getElementById("intervalos");
-    radios.forEach(r => r.addEventListener("change", () => {
-      intervalos.disabled = (document.querySelector('input[name="modo"]:checked').value !== "intervalos");
-    }));
-
-    function enviar(e){
-      e.preventDefault();
-      const form = document.getElementById("form-split");
-      const fd = new FormData(form);
-      const files = form.querySelector('input[type="file"]').files;
-      if (!files.length) { showStatus(false, "Selecione ao menos um PDF."); return; }
-
-      addHistorico(Array.from(files).map(f => f.name));
-
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "{{ url_for('dividir') }}", true);
-      xhr.responseType = "blob";
-
-      const progress = document.getElementById("progress");
-      const bar = document.getElementById("bar");
-      const percent = document.getElementById("percent");
-      progress.classList.remove("hidden"); bar.style.width = "0%"; percent.textContent = "0%";
-
-      xhr.upload.onprogress = (evt) => {
-        if (evt.lengthComputable) {
-          const p = Math.round((evt.loaded / evt.total) * 100);
-          bar.style.width = p + "%"; percent.textContent = p + "%";
-        }
-      };
-
-      xhr.onload = () => {
-        progress.classList.add("hidden");
-        if (xhr.status === 200) {
-          const blob = xhr.response;
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a"); a.href = url; a.download = "pdfs_divididos.zip";
-          document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-          showModal(true, "PDFs divididos com sucesso! Verifique também o arquivo relatorio.txt no ZIP.");
-        } else {
-          // ler JSON de erro, se possível
-          const fr = new FileReader();
-          fr.onload = () => {
-            try { const data = JSON.parse(fr.result); showModal(false, data.msg || "Erro ao processar."); }
-            catch { showModal(false, "Erro ao processar."); }
-          };
-          fr.readAsText(xhr.response);
-        }
-      };
-
-      xhr.onerror = () => { progress.classList.add("hidden"); showModal(false, "Falha na rede."); };
-      xhr.send(fd);
-    }
-
-    function showStatus(ok, msg){
-      const box = document.getElementById("status-area");
-      box.classList.remove("hidden","success","error");
-      box.classList.add(ok ? "success" : "error");
-      box.textContent = (ok ? "✔️ " : "❌ ") + msg;
-    }
-    function showModal(ok,msg){
-      const modal = document.getElementById("modal");
-      const icon = document.getElementById("modal-icon");
-      const text = document.getElementById("modal-text");
-      icon.textContent = ok ? "✔️" : "❌";
-      text.textContent = msg;
-      modal.classList.remove("hidden");
-    }
-    function fecharModal(){ document.getElementById("modal").classList.add("hidden"); }
-
-    function addHistorico(nomes){
-      const sec = document.getElementById("historico");
-      const ul = document.getElementById("lista-historico");
-      sec.classList.remove("hidden");
-      nomes.forEach(n => { const li = document.createElement("li"); li.textContent = n; ul.prepend(li); });
-    }
-  </script>
+    <footer>
+        Criado por Darlan Oliveira Ferreira Belfort
+    </footer>
 </body>
 </html>
