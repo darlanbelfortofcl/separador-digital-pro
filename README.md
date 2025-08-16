@@ -1,23 +1,19 @@
-# PDF Toolkit (Render-ready)
-Flask app para **converter PDF → DOCX editável**, **dividir** e **mesclar** PDFs. Pronto para deploy no Render.
+
+# Separador Digital Pro — Modo Turbo (Editável)
+
+PDF → DOCX **editável** (texto real) com **pdf2docx** em modo rápido (`layout_mode=loose`) e barra de progresso via **SSE**.
+Divisão de PDF com ZIP final. UI moderna e responsiva.
 
 ## Rodar local
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python -m src.app
-# ou
-gunicorn src.app:app -b 0.0.0.0:5000
 ```
-Acesse: http://localhost:5000
+pip install -r requirements.txt
+python app.py
+# http://localhost:5000
+```
 
-## Deploy no Render
-1) Crie um Web Service apontando para este repositório.
-2) Build command: `pip install -r requirements.txt`
-3) **Start command**: deixe em branco (Render usa `Procfile`) ou defina **exatamente**: `gunicorn src.app:app`
-4) Deploy.
-5) Teste o healthcheck: `/health` → deve retornar `{"status":"ok"}`.
+## Render
+- Build: `pip install -r requirements.txt`
+- Start: `gunicorn app:app`
 
-### Observações
-- Sem `pdf2image` e sem `python-magic` (evita dependências de sistema).
-- Conversão focada em conteúdo **editável**; PDFs apenas-imagem não terão texto (sem OCR).
+## Observação DOCX→PDF
+Requer `docx2pdf` (Word/Office). Em Linux/Render, sem Word, essa rota pode não funcionar.

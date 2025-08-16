@@ -1,7 +1,0 @@
-{% extends "base.html" %}{% block content %}<h2>Comprimir PDF</h2>
-<form id="form" onsubmit="return false;"><div class="uploader" id="dropArea"><input type="file" id="fileInput" name="file" accept=".pdf" />
-<div class="uploader-visual"><div class="icon">☁️</div><div class="text"><strong>Arraste e solte</strong> ou <span class="btn-like">clique</span></div></div></div>
-<div class="controls"><button id="startBtn" class="primary">Iniciar</button></div>
-<div class="progress"><div class="bar" id="bar"></div></div>
-<div id="status" class="status"></div><div id="result" class="result"></div></form>{% endblock %}
-{% block scripts %}<script>const ACTION="/api/compress";</script><script src="/static/js/uploader.js"></script><script src="/static/js/generic_action.js"></script>{% endblock %}

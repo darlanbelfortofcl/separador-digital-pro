@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel - Separador Digital Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+<div class="container">
+    <h1>Separador Digital Pro</h1>
+    {% if filename %}
+        <p>Arquivo enviado: <strong>{{ filename }}</strong></p>
+    {% endif %}
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="pdf_file" accept="application/pdf" required>
+        <button type="submit">Enviar PDF</button>
+    </form>
+    <form action="{{ url_for('main.process') }}" method="POST">
+        <input type="text" name="pages" placeholder="Ex: 1-3,5" required>
+        <button type="submit">Dividir PDF</button>
+    </form>
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    <a href="{{ url_for('main.logout') }}">Sair</a>
+</div>
+</body>
+</html>

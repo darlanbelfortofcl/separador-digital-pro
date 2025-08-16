@@ -1,29 +1,51 @@
+import json
+import logging
+import queue
 import threading
 from pathlib import Path
-from typing import List, Dict
-from pdf_ops import split_pdf_to_folder
-from file_utils import safe_basename, zip_tree
-from config import OUTPUT_FOLDER
+from typing import Dict
 
-jobs: Dict[str, dict] = {}
+from config import LOG_FOLDER, QUEUE_GET_TIMEOUT
 
-def start_multi_split_job(job_id: str, pdfs: List[Path], original_names: List[str]):
-    jobs[job_id] = {"status": "running", "progress": 0, "total": len(pdfs), "zip": None, "details": []}
-    def run():
+job_queues: Dict[str, "queue.Queue"] = {}
+
+
+def get_logger(job_id: str) -> logging.Logger:
+    logger = logging.getLogger(f"job.{job_id}")
+    if not logger.handlers:
+        logger.setLevel(logging.INFO)
+        LOG_FOLDER.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(Path(LOG_FOLDER) / f"{job_id}.log", encoding="utf-8")
+        fmt = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
+        fh.setFormatter(fmt)
+        logger.addHandler(fh)
+    return logger
+
+
+def start_thread(target, args: tuple) -> str:
+    q = queue.Queue()
+    job_id = args[0]  # 1º arg deve ser job_id
+    job_queues[job_id] = q
+    t = threading.Thread(target=target, args=args, daemon=True)
+    t.start()
+    return job_id
+
+
+def sse_stream(job_id: str):
+    if job_id not in job_queues:
+        yield "data: " + json.dumps({"error": True, "msg": "job inválido"}, ensure_ascii=False) + "\n\n"
+        return
+
+    q: "queue.Queue" = job_queues[job_id]
+    done = False
+    while not done:
         try:
-            root_out = OUTPUT_FOLDER / job_id
-            root_out.mkdir(exist_ok=True)
-            for idx, (pdf_path, orig_name) in enumerate(zip(pdfs, original_names), start=1):
-                base = safe_basename(orig_name)
-                target_dir = root_out / base
-                written = split_pdf_to_folder(pdf_path, target_dir, base_name=base)
-                jobs[job_id]["details"].append({"original": orig_name, "folder": str(target_dir), "pages": len(written)})
-                jobs[job_id]["progress"] = idx
-            zip_path = OUTPUT_FOLDER / f"{job_id}.zip"
-            zip_tree(root_out, zip_path)
-            jobs[job_id]["zip"] = str(zip_path)
-            jobs[job_id]["status"] = "done"
-        except Exception as e:
-            jobs[job_id]["status"] = "error"
-            jobs[job_id]["error"] = str(e)
-    threading.Thread(target=run, daemon=True).start()
+            item = q.get(timeout=QUEUE_GET_TIMEOUT)
+            if isinstance(item, dict):
+                if item.get("done"):
+                    done = True
+                yield "data: " + json.dumps(item, ensure_ascii=False) + "\n\n"
+        except queue.Empty:
+            # comentário (evento de keep-alive)
+            yield ": ping\n\n"
+    job_queues.pop(job_id, None)
