@@ -1,14 +1,18 @@
-{% extends "base.html" %}
+
+{% extends 'layout.html' %}
 {% block content %}
-  <div class="row">
-    <div class="muted">Informe a senha para acessar o painel.</div>
-    <form method="post" class="row">
-      <input class="input" name="senha" type="password" placeholder="Senha de acesso" required>
-      {% if error %}<div class="badge" style="background:rgba(239,68,68,.15); border-color:rgba(239,68,68,.35); color:#fecaca">{{ error }}</div>{% endif %}
-      <button class="btn" type="submit">Entrar</button>
-    </form>
-    <div class="muted" style="font-size:12px">
-      Segurança: senha checada no servidor (variável de ambiente <code>SENHA_ADMIN</code>). Limite de 5 tentativas por minuto.
-    </div>
-  </div>
+<section class="card narrow">
+  <h2>Acesso Restrito</h2>
+  <p class="muted">Digite a senha para entrar.</p>
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+  <form method="POST" class="grid gap">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="password">Senha</label>
+    <input type="password" id="password" name="password" required minlength="3" autocomplete="current-password">
+    <button class="btn" type="submit">Entrar</button>
+    <p class="muted">Tentativas restantes: {{ attempts_left }}</p>
+  </form>
+</section>
 {% endblock %}

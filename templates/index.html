@@ -1,0 +1,49 @@
+
+{% extends 'layout.html' %}
+{% block content %}
+<section class="card">
+  <h2>Dividir PDF</h2>
+  <p class="muted">Faça upload do PDF, visualize e escolha como dividir.</p>
+
+  <form id="split-form" class="grid" action="{{ url_for('split') }}" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="field">
+      <label for="file">Arquivo PDF</label>
+      <input type="file" id="file" name="file" accept="application/pdf" required>
+    </div>
+
+    <div class="field">
+      <label>Modo</label>
+      <div class="radio-row">
+        <label><input type="radio" name="mode" value="individual" checked> Páginas individuais</label>
+        <label><input type="radio" name="mode" value="ranges"> Intervalos personalizados</label>
+      </div>
+    </div>
+
+    <div class="field" id="ranges-wrap" style="display:none;">
+      <label for="ranges">Intervalos (ex.: 1-3,5,7-9)</label>
+      <input type="text" id="ranges" name="ranges" placeholder="1-3,5,7-9">
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Separar</button>
+      <div id="progress" class="progress" hidden>
+        <div id="bar" class="bar"></div>
+        <span id="pct">0%</span>
+      </div>
+    </div>
+  </form>
+
+  <div class="preview">
+    <h3>Pré-visualização</h3>
+    <p class="muted">Uma prévia do PDF selecionado aparecerá abaixo.</p>
+    <div class="preview-box">
+      <embed id="pdfPreview" type="application/pdf" />
+      <div id="cutEffect" class="cut" hidden>
+        <div class="line"></div>
+        <div class="scissor">✂</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
