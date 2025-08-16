@@ -20,7 +20,7 @@ const feedback = $("#feedback");
 
 let files = [];
 
-// Theme
+// ---- THEME ----
 (function initTheme(){
   const saved = localStorage.getItem("theme") || "dark";
   if(saved === "light") document.body.classList.add("light");
@@ -33,24 +33,31 @@ themeToggle.addEventListener("click", ()=>{
   themeToggle.textContent = isLight ? "☀️" : "🌙";
 });
 
-// Drag and drop
+// ---- FILES ----
 dropzone.addEventListener("dragover", (e)=>{ e.preventDefault(); dropzone.style.transform = "scale(1.01)"; });
 dropzone.addEventListener("dragleave", ()=>{ dropzone.style.transform = "scale(1)"; });
 dropzone.addEventListener("drop", (e)=>{
   e.preventDefault(); dropzone.style.transform = "scale(1)";
   const dropped = Array.from(e.dataTransfer.files).filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+  if (!dropped.length){ toastError("Apenas PDFs são permitidos."); return; }
   files = files.concat(dropped);
   renderList();
 });
 dropzone.addEventListener("click", ()=> fileInput.click());
 fileInput.addEventListener("change", ()=>{
-  files = files.concat(Array.from(fileInput.files));
+  const picked = Array.from(fileInput.files).filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+  if (!picked.length){ toastError("Apenas PDFs são permitidos."); return; }
+  files = files.concat(picked);
   renderList();
 });
 
 clearBtn.addEventListener("click", ()=>{
   files = [];
   renderList();
+  hide(results, processing, feedback);
+  hide(uploadProgress);
+  barFill.style.width = "0%";
+  progressText.textContent = "Enviando 0%";
 });
 
 function renderList(){
@@ -64,15 +71,27 @@ function renderList(){
   `).join("");
 }
 
-// Upload + process
+// ---- HELPERS ----
+function show(...els){ els.forEach(el=> el.hidden = false); }
+function hide(...els){ els.forEach(el=> el.hidden = true); }
+function toastError(msg){
+  feedback.textContent = msg;
+  feedback.hidden = false;
+  setTimeout(()=> feedback.hidden = true, 6000);
+}
+
+// ---- UPLOAD & PROCESS ----
 startBtn.addEventListener("click", async ()=>{
   if(!files.length) return;
   feedback.hidden = true;
   results.hidden = true;
   processing.hidden = true;
-  uploadProgress.hidden = false;
+  show(uploadProgress);
+  startBtn.disabled = true;
+
   barFill.style.width = "0%";
   progressText.textContent = "Enviando 0%";
+
   try{
     const fd = new FormData();
     files.forEach(f => fd.append("files", f));
@@ -89,59 +108,75 @@ startBtn.addEventListener("click", async ()=>{
       };
       xhr.onload = ()=>{
         if(xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText));
-        else reject(new Error("Falha no upload"));
+        else reject(new Error("Falha no upload (" + xhr.status + ")"));
       };
       xhr.onerror = ()=> reject(new Error("Erro de rede no upload"));
       xhr.send(fd);
     });
 
     const data = await promise;
-    uploadProgress.hidden = true;
+    hide(uploadProgress);
     if(!data.job_id) throw new Error("job_id inválido");
 
-    processing.hidden = false;
+    show(processing);
     statusText.textContent = "Processando...";
 
-    pollStatus(data.job_id);
+    await pollStatus(data.job_id, 180); // timeout de 180s
   }catch(err){
-    uploadProgress.hidden = true;
-    feedback.hidden = false;
-    feedback.textContent = "Erro: " + err.message;
+    hide(uploadProgress, processing);
+    startBtn.disabled = false;
+    toastError("Erro: " + err.message);
   }
 });
 
-async function pollStatus(jobId){
-  const timer = setInterval(async ()=>{
+async function pollStatus(jobId, timeoutSec=180){
+  const started = Date.now();
+  const delay = (ms)=> new Promise(r=> setTimeout(r, ms));
+  while(true){
+    if((Date.now()-started)/1000 > timeoutSec){
+      hide(processing);
+      startBtn.disabled = false;
+      toastError("Tempo esgotado ao processar. Tente novamente.");
+      return;
+    }
     try{
-      const r = await fetch("/status/" + jobId);
+      const r = await fetch(`/status/${jobId}`, { cache:"no-store" });
+      if(!r.ok){
+        await delay(1200);
+        continue;
+      }
       const s = await r.json();
-      if(s.error) throw new Error(s.error);
+      if(s.error){
+        hide(processing);
+        startBtn.disabled = false;
+        toastError(s.error);
+        return;
+      }
       statusText.textContent = `Status: ${s.status} — ${s.progress || 0}%`;
       if(s.status === "finished"){
-        clearInterval(timer);
-        processing.hidden = true;
-        results.hidden = false;
-        zipLink.href = `/download/${jobId}`;
-        loadList(jobId);
+        hide(processing);
+        show(results);
+        zipLink.href = `/download/${jobId}`; // Baixar Todos (ZIP)
+        await loadList(jobId);               // Baixar individuais
+        startBtn.disabled = false;
+        return;
       }
       if(s.status === "failed"){
-        clearInterval(timer);
-        processing.hidden = true;
-        feedback.hidden = false;
-        feedback.textContent = "O processamento falhou.";
+        hide(processing);
+        startBtn.disabled = false;
+        toastError("O processamento falhou.");
+        return;
       }
     }catch(e){
-      clearInterval(timer);
-      processing.hidden = true;
-      feedback.hidden = false;
-      feedback.textContent = "Erro ao consultar status.";
+      // falha intermitente: espera e tenta de novo
     }
-  }, 1200);
+    await delay(1200);
+  }
 }
 
 async function loadList(jobId){
   try{
-    const r = await fetch("/list/" + jobId);
+    const r = await fetch("/list/" + jobId, { cache:"no-store" });
     const d = await r.json();
     if(!d.files) return;
     filesOut.innerHTML = d.files.map(name => `

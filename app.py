@@ -2,8 +2,7 @@
 import os
 import threading
 import uuid
-from flask import Flask, request, jsonify, send_file, render_template, abort
-from werkzeug.utils import secure_filename
+from flask import Flask, request, jsonify, send_file, render_template
 from tasks import process_job_thread
 from utils import allowed_file, unique_safe_filename, is_safe_output
 
@@ -20,7 +19,6 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# Armazena o estado dos jobs em memória
 JOBS = {}
 
 @app.route("/")
@@ -50,10 +48,8 @@ def upload_files():
         file.save(filepath)
         saved_files.append(filepath)
 
-    # Inicializa estado do job
     JOBS[job_id] = {"status": "queued", "progress": 0, "result": None, "files": []}
 
-    # Inicia thread de processamento
     th = threading.Thread(target=process_job_thread, args=(job_id, saved_files, job_output_dir, JOBS), daemon=True)
     th.start()
 
@@ -76,7 +72,6 @@ def list_files(job_id):
     job = JOBS.get(job_id)
     if not job or job["status"] != "finished":
         return jsonify({"error": "Ainda não disponível"}), 404
-    # retorna lista de arquivos individuais
     return jsonify({"files": job.get("files", [])})
 
 @app.route("/download/<job_id>")
@@ -88,7 +83,6 @@ def download_zip(job_id):
 
 @app.route("/download/<job_id>/<path:filename>")
 def download_single(job_id, filename):
-    # baixa um arquivo individual do job
     base_dir = os.path.join(OUTPUT_FOLDER, job_id)
     file_path = os.path.join(base_dir, filename)
     if not (os.path.exists(file_path) and is_safe_output(file_path, base_dir)):

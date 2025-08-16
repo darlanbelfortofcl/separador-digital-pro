@@ -31,13 +31,12 @@ def process_job_thread(job_id: str, input_files: list[str], output_dir: str, JOB
                     out_files.append(out_name)
                     done += 1
                     if total_pages:
-                        JOBS[job_id]["progress"] = int((done / total_pages) * 100)
+                        JOBS[job_id]["progress"] = min(99, int((done / total_pages) * 100))
             except Exception:
                 errs = JOBS[job_id].get("errors", [])
                 errs.append(base)
                 JOBS[job_id]["errors"] = errs
 
-        # cria zip final
         zip_path = os.path.join(output_dir, "pdfs_divididos.zip")
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
             for name in out_files:
