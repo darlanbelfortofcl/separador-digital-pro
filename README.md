@@ -1,21 +1,25 @@
 
-# Separador Digital Pro
+# Separador Digital Pro — Multi PDF
+- Login (senha fixa): `29031984bB@G`
+- Upload múltiplo de PDFs, divisão por **todas as páginas** ou por **intervalos personalizados**.
+- Download final em **ZIP** (organizado por arquivo).
+- Modo escuro/claro com persistência.
+- Barra de progresso de upload + modal de sucesso/erro.
+- Favicon incluso.
 
-Um site simples para dividir PDFs em páginas individuais ou intervalos personalizados.
-
-## Funcionalidades
-- Login com senha fixa (`29031984bB@G`)
-- Upload de PDF
-- Divisão por páginas individuais (gera ZIP)
-- Divisão por intervalo
-- Modo claro/escuro com botão
-- Feedback visual de sucesso/erro
-- Rodapé personalizado
-- Hover nos botões, links e rodapé
+## Executar localmente
+```bash
+pip install -r requirements.txt
+python app.py
+```
+Abra http://127.0.0.1:5000
 
 ## Deploy no Render
-1. Crie um repositório no GitHub e faça push dos arquivos.
-2. No Render, crie um novo Web Service a partir do repositório.
-3. Configure o Start Command: `python app.py`
-4. Deploy!
+- `render.yaml` e `Procfile` prontos.
+- Build: `pip install -r requirements.txt`
+- Start: `gunicorn app:app --timeout 120 --workers 1 --threads 2`
+- Python: `python-3.11.9` via `runtime.txt`.
 
+## Observações
+- Intervalos: use formato `1-3,5,7-9` (1-based). 
+- Se nenhum intervalo válido for informado no modo "intervalos", o arquivo é ignorado.

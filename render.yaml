@@ -1,6 +1,7 @@
+
 services:
   - type: web
     name: separador-digital-pro
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --timeout 120 --workers 1 --threads 2

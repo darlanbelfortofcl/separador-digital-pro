@@ -1,25 +1,74 @@
 
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
+import io
+import zipfile
+from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash, jsonify
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfReader, PdfWriter
-import zipfile
-import io
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"
+app.secret_key = "supersecretkey"  # para sessão e flash
 
-# Senha fixa definida
+# Senha fixa (a pedido)
 ADMIN_PASSWORD = "29031984bB@G"
 
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+def parse_intervalos(intervalos_str, total_pages):
+    # Converte '1-3,5,7-9' para lista de ranges (0-based, inclusivo)
+    results = []
+    s = (intervalos_str or "").replace(" ", "")
+    if not s:
+        return results
+    for part in s.split(","):
+        if not part:
+            continue
+        if "-" in part:
+            ini_s, fim_s = part.split("-", 1)
+            try:
+                ini = max(1, int(ini_s))
+                fim = min(total_pages, int(fim_s))
+            except:
+                continue
+            if ini <= fim:
+                results.append((ini-1, fim-1))
+        else:
+            try:
+                p = int(part)
+            except:
+                continue
+            if 1 <= p <= total_pages:
+                results.append((p-1, p-1))
+    return results
+
+def dividir_pdf_em_paginas(reader):
+    outputs = []
+    for i, page in enumerate(reader.pages, start=1):
+        writer = PdfWriter()
+        writer.add_page(page)
+        buf = io.BytesIO()
+        writer.write(buf)
+        buf.seek(0)
+        outputs.append((f"pagina_{i}.pdf", buf))
+    return outputs
+
+def dividir_pdf_por_intervalos(reader, intervalos_str):
+    ranges = parse_intervalos(intervalos_str, len(reader.pages))
+    outputs = []
+    if not ranges:
+        return outputs
+    for idx, (ini, fim) in enumerate(ranges, start=1):
+        writer = PdfWriter()
+        for i in range(ini, fim+1):
+            writer.add_page(reader.pages[i])
+        buf = io.BytesIO()
+        writer.write(buf)
+        buf.seek(0)
+        outputs.append((f"intervalo_{idx}_{ini+1}-{fim+1}.pdf", buf))
+    return outputs
 
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        senha = request.form.get("password")
+        senha = request.form.get("password", "")
         if senha == ADMIN_PASSWORD:
             session["logged_in"] = True
             return redirect(url_for("index"))
@@ -36,61 +85,45 @@ def index():
 @app.route("/dividir", methods=["POST"])
 def dividir():
     if not session.get("logged_in"):
-        return redirect(url_for("login"))
+        return jsonify({"ok": False, "msg": "Não autorizado."}), 401
 
-    if "pdf_file" not in request.files:
-        flash("Nenhum arquivo enviado", "error")
-        return redirect(url_for("index"))
+    files = request.files.getlist("pdf_files")
+    modo = request.form.get("modo")  # 'todas' ou 'intervalos'
+    intervalos = request.form.get("intervalos", "")
 
-    pdf_file = request.files["pdf_file"]
-    if pdf_file.filename == "":
-        flash("Nenhum arquivo selecionado", "error")
-        return redirect(url_for("index"))
+    if not files:
+        return jsonify({"ok": False, "msg": "Nenhum arquivo enviado."}), 400
+    if modo not in ("todas", "intervalos"):
+        return jsonify({"ok": False, "msg": "Modo inválido."}), 400
 
     try:
-        filename = secure_filename(pdf_file.filename)
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        pdf_file.save(filepath)
+        zip_mem = io.BytesIO()
+        with zipfile.ZipFile(zip_mem, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+            for f in files:
+                if not f or not f.filename.lower().endswith(".pdf"):
+                    continue
+                filename = secure_filename(f.filename)
+                stem = os.path.splitext(filename)[0]
+                reader = PdfReader(f.stream)
 
-        reader = PdfReader(filepath)
-        option = request.form.get("option")
+                if modo == "todas":
+                    parts = dividir_pdf_em_paginas(reader)
+                else:
+                    parts = dividir_pdf_por_intervalos(reader, intervalos)
+                    if not parts:
+                        # se intervalos inválidos, pula arquivo
+                        continue
 
-        if option == "individual":
-            mem_zip = io.BytesIO()
-            with zipfile.ZipFile(mem_zip, 'w') as zipf:
-                for i, page in enumerate(reader.pages, start=1):
-                    writer = PdfWriter()
-                    writer.add_page(page)
-                    output_stream = io.BytesIO()
-                    writer.write(output_stream)
-                    output_stream.seek(0)
-                    zipf.writestr(f"pagina_{i}.pdf", output_stream.read())
-            mem_zip.seek(0)
-            return send_file(mem_zip, as_attachment=True, download_name="pdf_dividido.zip")
+                # Organiza por subpasta com nome do arquivo original
+                for name, buf in parts:
+                    zipf.writestr(f"{stem}/{name}", buf.getvalue())
 
-        elif option == "intervalo":
-            inicio = int(request.form.get("inicio"))
-            fim = int(request.form.get("fim"))
-            if inicio < 1 or fim > len(reader.pages) or inicio > fim:
-                flash("Intervalo inválido", "error")
-                return redirect(url_for("index"))
-
-            writer = PdfWriter()
-            for i in range(inicio-1, fim):
-                writer.add_page(reader.pages[i])
-
-            output = io.BytesIO()
-            writer.write(output)
-            output.seek(0)
-            return send_file(output, as_attachment=True, download_name="pdf_intervalo.pdf")
-
-        else:
-            flash("Opção inválida", "error")
-            return redirect(url_for("index"))
+        zip_mem.seek(0)
+        # Para XHR com responseType=blob, retornamos diretamente o arquivo
+        return send_file(zip_mem, as_attachment=True, download_name="pdfs_divididos.zip")
 
     except Exception as e:
-        flash(f"Erro ao dividir PDF: {str(e)}", "error")
-        return redirect(url_for("index"))
+        return jsonify({"ok": False, "msg": f"Erro ao processar: {str(e)}"}), 500
 
 @app.route("/logout")
 def logout():
@@ -98,4 +131,4 @@ def logout():
     return redirect(url_for("login"))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

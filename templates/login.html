@@ -2,17 +2,18 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Separador Digital Pro</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
-  <div class="container">
+  <div class="container card">
     <h1>Separador Digital Pro</h1>
-    <form method="POST">
-      <input type="password" name="password" placeholder="Digite a senha" required>
-      <button type="submit">Entrar</button>
+    <form method="POST" class="form">
+      <input type="password" name="password" placeholder="Digite a senha" required />
+      <button type="submit" class="btn primary">Entrar</button>
     </form>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -24,5 +25,8 @@
       {% endif %}
     {% endwith %}
   </div>
+  <footer>
+    <p>Criado por <strong>Darlan Oliveira Ferreira Belfort</strong> — <a href="https://github.com/darlanbelfortofcl" target="_blank">GitHub</a></p>
+  </footer>
 </body>
 </html>
