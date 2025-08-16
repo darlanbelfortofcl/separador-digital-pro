@@ -1,19 +1,14 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Login - Separador Digital Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-<div class="login-container">
-    <h1>Separador Digital Pro</h1>
-    {% if erro %}<p class="error">{{ erro }}</p>{% endif %}
-    <form method="POST">
-        <input type="text" name="usuario" placeholder="Usuário" required>
-        <input type="password" name="senha" placeholder="Senha" required>
-        <button type="submit">Entrar</button>
+{% extends "base.html" %}
+{% block content %}
+  <div class="row">
+    <div class="muted">Informe a senha para acessar o painel.</div>
+    <form method="post" class="row">
+      <input class="input" name="senha" type="password" placeholder="Senha de acesso" required>
+      {% if error %}<div class="badge" style="background:rgba(239,68,68,.15); border-color:rgba(239,68,68,.35); color:#fecaca">{{ error }}</div>{% endif %}
+      <button class="btn" type="submit">Entrar</button>
     </form>
-</div>
-</body>
-</html>
+    <div class="muted" style="font-size:12px">
+      Segurança: senha checada no servidor (variável de ambiente <code>SENHA_ADMIN</code>). Limite de 5 tentativas por minuto.
+    </div>
+  </div>
+{% endblock %}

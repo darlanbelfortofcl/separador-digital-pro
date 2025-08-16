@@ -1,29 +1,21 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Painel - Separador Digital Pro</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-</head>
-<body>
-<div class="container">
-    <h1>Separador Digital Pro</h1>
-    {% if filename %}
-        <p>Arquivo enviado: <strong>{{ filename }}</strong></p>
-    {% endif %}
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="pdf_file" accept="application/pdf" required>
-        <button type="submit">Enviar PDF</button>
-    </form>
-    <form action="{{ url_for('main.process') }}" method="POST">
-        <input type="text" name="pages" placeholder="Ex: 1-3,5" required>
-        <button type="submit">Dividir PDF</button>
-    </form>
-    <div id="progress-container">
-        <div id="progress-bar"></div>
+{% extends "base.html" %}
+{% block content %}
+  <form id="pdf-form" class="row" enctype="multipart/form-data">
+    <label class="muted">Envie um PDF e escolha as páginas (ex: 1-3,5). Deixe em branco para todas.</label>
+    <div class="inline">
+      <input class="input" type="file" name="pdf" accept="application/pdf" required>
+      <input class="input" type="text" name="paginas" placeholder="Ex: 1-3,5">
     </div>
-    <a href="{{ url_for('main.logout') }}">Sair</a>
-</div>
-</body>
-</html>
+    <button class="btn" type="submit">Dividir PDF</button>
+    <div class="progress"><div class="bar"></div></div>
+    <div id="status" class="muted">Aguardando…</div>
+    <div id="download"></div>
+  </form>
+  <div class="row">
+    <div class="muted">Pré-visualização (miniaturas leves)</div>
+    <div id="thumbs" class="grid"></div>
+  </div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/app.js"></script>
+{% endblock %}

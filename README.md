@@ -1,19 +1,50 @@
+# Separador Digital Pro
 
-# Separador Digital Pro — Modo Turbo (Editável)
+Flask minimalista para divisão de PDFs por páginas/intervalos,
+com login via senha em variável de ambiente e barra de progresso (SSE).
+Leve para rodar no plano gratuito do Render.
 
-PDF → DOCX **editável** (texto real) com **pdf2docx** em modo rápido (`layout_mode=loose`) e barra de progresso via **SSE**.
-Divisão de PDF com ZIP final. UI moderna e responsiva.
+## Variáveis de ambiente
+- `SECRET_KEY` (obrigatória em produção)
+- `SENHA_ADMIN` (obrigatória) – senha única de acesso ao painel
+- `UPLOAD_FOLDER` (opcional; padrão `uploads`)
+- `OUTPUT_FOLDER` (opcional; padrão `outputs`)
+- `PORT` (Render define automaticamente)
 
-## Rodar local
-```
+## Como rodar localmente
+```bash
+python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-python app.py
-# http://localhost:5000
+export SECRET_KEY=um-segredo
+export SENHA_ADMIN=trocar
+python -m app
 ```
 
-## Render
-- Build: `pip install -r requirements.txt`
-- Start: `gunicorn app:app`
+## Deploy no Render (Web Service)
+1. Faça push deste projeto para um repositório Git.
+2. No Render, crie um **Web Service** apontando para o repositório.
+3. **Runtime**: Python 3.11+
+4. **Start command**: `gunicorn 'app:create_app()'`
+5. Configure **Environment Variables**:
+   - `SECRET_KEY` (valor longo e aleatório)
+   - `SENHA_ADMIN`
+6. Habilite o autoscaling **OFF** (plano free) e região próxima.
+7. Deploy!
 
-## Observação DOCX→PDF
-Requer `docx2pdf` (Word/Office). Em Linux/Render, sem Word, essa rota pode não funcionar.
+## Observações de Otimização
+- Uso de **PyPDF2** (leve) e split direto em disco, evitando alto consumo de RAM.
+- SSE com intervalos curtos e payload pequeno.
+- Thumbnails simulados com `<embed>` escalado (sem PDF.js).
+- Limpeza automática pode ser adicionada via cron externo do Render (opcional).
+
+## Estrutura
+```
+/app
+  /static
+  /templates
+  __init__.py
+  routes.py
+  utils.py
+requirements.txt
+Procfile
+```
