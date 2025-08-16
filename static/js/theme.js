@@ -1,17 +1,14 @@
 (function(){
   const root = document.documentElement;
-  const saved = localStorage.getItem('theme') || document.cookie.replace(/(?:(?:^|.*;\s*)theme\s*\=\s*([^;]*).*$)|^.*$/, '$1');
-  if(saved){ root.setAttribute('data-theme', saved); }
-  window.addEventListener('DOMContentLoaded', () => {
+  const getSaved = () => localStorage.getItem('theme') || document.cookie.replace(/(?:(?:^|.*;\s*)theme\s*\=\s*([^;]*).*$)|^.*$/, '$1');
+  const apply = (t) => { root.setAttribute('data-theme', t); localStorage.setItem('theme', t); document.cookie='theme='+t+';path=/;max-age=31536000'; };
+  const init = () => {
+    const saved = getSaved();
+    if(saved) apply(saved);
     const btn = document.getElementById('theme-toggle');
-    const isLight = root.getAttribute('data-theme') === 'light';
-    btn.textContent = isLight ? '🌙' : '☀️';
-    btn.addEventListener('click', () => {
-      const cur = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-      root.setAttribute('data-theme', cur);
-      localStorage.setItem('theme', cur);
-      document.cookie = 'theme=' + cur + ';path=/;max-age=31536000';
-      btn.textContent = cur === 'light' ? '🌙' : '☀️';
-    });
-  });
+    const setIcon = () => btn.textContent = (root.getAttribute('data-theme') === 'light') ? '🌙' : '☀️';
+    setIcon();
+    btn.addEventListener('click', ()=>{ apply(root.getAttribute('data-theme')==='light'?'dark':'light'); setIcon(); });
+  };
+  window.addEventListener('DOMContentLoaded', init);
 })();

@@ -65,6 +65,8 @@ body {
 .dropzone:hover { transform: translateY(-1px); border-color: var(--accent); }
 .dropzone input[type="file"] { display:none; }
 
+.filelist { font-size:.9rem; color: var(--muted); margin: 6px 2px 12px; white-space:pre-wrap; }
+
 .btn {
   display:inline-flex; align-items:center; justify-content:center;
   border-radius: 12px; padding: 10px 14px;

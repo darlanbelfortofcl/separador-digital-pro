@@ -1,12 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="grid">
+  <article class="card">
+    <h2>PDF → DOCX (editável)</h2>
+    <form id="form-convert" action="/api/convert" method="post" enctype="multipart/form-data">
+      <label class="dropzone">
+        <input type="file" name="file" accept="application/pdf" required>
+        <span>Solte um PDF aqui ou clique</span>
+      </label>
+      <div class="filelist" data-for="form-convert"></div>
+      <button class="btn primary">Converter</button>
+    </form>
+  </article>
 
-<!doctype html>
-<html lang="pt-br">
-<head>
-  <meta charset="utf-8">
-  <title>PDF Tool</title>
-</head>
-<body>
-  <h1>PDF Tool no Render</h1>
-  <p>Se você está vendo isso, o Flask está rodando!</p>
-</body>
-</html>
+  <article class="card">
+    <h2>Dividir PDFs</h2>
+    <form id="form-split" action="/api/split" method="post" enctype="multipart/form-data">
+      <label class="dropzone">
+        <input type="file" name="files" accept="application/pdf" multiple required>
+        <span>Solte 1+ PDFs aqui ou clique</span>
+      </label>
+      <div class="filelist" data-for="form-split"></div>
+      <button class="btn primary">Dividir (gera ZIP)</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h2>Mesclar PDFs</h2>
+    <form id="form-merge" action="/api/merge" method="post" enctype="multipart/form-data">
+      <label class="dropzone">
+        <input type="file" name="files" accept="application/pdf" multiple required>
+        <span>Solte 2+ PDFs aqui ou clique</span>
+      </label>
+      <div class="filelist" data-for="form-merge"></div>
+      <button class="btn primary">Mesclar</button>
+    </form>
+  </article>
+</section>
+{% endblock %}

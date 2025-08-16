@@ -3,7 +3,7 @@ from typing import Iterable, List, Tuple
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer, LTChar, LTTextLine, LTAnno
 from docx import Document
-from docx.shared import Pt, Inches
+from docx.shared import Inches
 
 def _iter_text_boxes(pdf_path: Path) -> Iterable[LTTextContainer]:
     for page_layout in extract_pages(str(pdf_path)):
@@ -11,8 +11,7 @@ def _iter_text_boxes(pdf_path: Path) -> Iterable[LTTextContainer]:
             if isinstance(element, LTTextContainer):
                 yield element
 
-def _line_text_and_bold(line: LTTextLine) -> Tuple[str, bool]:
-    # Heurística: se >50% dos LTChar tiverem fonte com "Bold" no nome, marcamos como negrito
+def _line_text_and_bold(line: LTTextLine) -> tuple[str, bool]:
     total_chars = 0
     bold_chars = 0
     text_parts: List[str] = []
@@ -37,13 +36,10 @@ def _line_text_and_bold(line: LTTextLine) -> Tuple[str, bool]:
 def pdf_to_docx_editable(pdf_path: Path, out_docx: Path) -> Path:
     doc = Document()
     doc.core_properties.title = pdf_path.stem
-
     current_para = None
     last_y = None
 
-    # Agrupa por linhas mantendo quebras onde há distância vertical significativa
     for tb in _iter_text_boxes(pdf_path):
-        # Cada text box possui múltiplas linhas
         for line in tb:
             if not isinstance(line, LTTextLine):
                 continue
@@ -51,22 +47,17 @@ def pdf_to_docx_editable(pdf_path: Path, out_docx: Path) -> Path:
             text = text.replace('\u00a0', ' ').strip()
             if not text:
                 continue
-
-            # Heurística de parágrafo: quebra se houver salto vertical grande
             y0 = getattr(line, 'y0', None)
             if last_y is not None and y0 is not None and abs(y0 - last_y) > 12:
-                current_para = None  # força novo parágrafo
+                current_para = None
             last_y = y0
-
             if current_para is None:
                 current_para = doc.add_paragraph()
             run = current_para.add_run(text)
             if is_bold:
                 run.bold = True
-        # Após cada text box, fecha parágrafo
         current_para = None
 
-    # Ajustes de página
     for section in doc.sections:
         section.left_margin = Inches(1)
         section.right_margin = Inches(1)

@@ -3,14 +3,12 @@ from typing import List
 from PyPDF2 import PdfReader, PdfWriter
 
 def validate_pdf(path: Path) -> None:
-    # Try opening the document to ensure it's readable & not encrypted
     reader = PdfReader(str(path))
     if reader.is_encrypted:
         raise ValueError("PDF protegido por senha não é suportado.")
-    # Access first page to trigger parse
     _ = reader.pages[0] if len(reader.pages) else None
 
-def split_pdf(src: Path, out_dir: Path) -> List[Path]:
+def split_pdf(src: Path, out_dir: Path) -> list[Path]:
     validate_pdf(src)
     reader = PdfReader(str(src))
     out_dir.mkdir(parents=True, exist_ok=True)
