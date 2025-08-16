@@ -8,11 +8,11 @@
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
-<body>
+<body class="light">
   <header class="header">
     <div class="brand">Separador Digital Pro</div>
     <div class="actions">
-      <button id="toggle-theme" class="btn ghost" title="Alternar tema">🌙 / ☀️</button>
+      <button id="toggle-theme" class="btn ghost" title="Alternar tema">🌙</button>
       <a class="btn danger" href="{{ url_for('logout') }}">Sair</a>
     </div>
   </header>
@@ -47,7 +47,6 @@
     </section>
   </main>
 
-  <!-- Modal -->
   <div id="modal" class="modal hidden">
     <div class="modal-content card">
       <div id="modal-icon" class="modal-icon">✔️</div>
@@ -64,9 +63,9 @@
     // Tema
     const body = document.body;
     const btnTheme = document.getElementById("toggle-theme");
-    const savedTheme = localStorage.getItem("theme") || "light";
-    body.classList.add(savedTheme);
-    btnTheme.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    const saved = localStorage.getItem("theme") || "light";
+    body.classList.add(saved);
+    btnTheme.textContent = saved === "dark" ? "☀️" : "🌙";
     btnTheme.onclick = () => {
       const now = body.classList.contains("dark") ? "dark" : "light";
       const next = now === "dark" ? "light" : "dark";
@@ -75,93 +74,68 @@
       btnTheme.textContent = next === "dark" ? "☀️" : "🌙";
     };
 
-    // Habilitar/Desabilitar intervalos
+    // Habilita/Desabilita intervalos
     const radios = document.querySelectorAll('input[name="modo"]');
     const intervalos = document.getElementById("intervalos");
     radios.forEach(r => r.addEventListener("change", () => {
       intervalos.disabled = (document.querySelector('input[name="modo"]:checked').value !== "intervalos");
     }));
 
-    // Enviar com XHR para ter progresso e baixar blob
-    function enviar(e) {
+    function enviar(e){
       e.preventDefault();
       const form = document.getElementById("form-split");
       const fd = new FormData(form);
-
       const files = form.querySelector('input[type="file"]').files;
-      if (!files.length) {
-        showStatus(false, "Selecione ao menos um PDF.");
-        return;
-      }
+      if (!files.length) { showStatus(false, "Selecione ao menos um PDF."); return; }
 
-      // histórico (cliente)
       addHistorico(Array.from(files).map(f => f.name));
 
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "{{ url_for('dividir') }}", true);
       xhr.responseType = "blob";
 
-      // Progresso de upload
       const progress = document.getElementById("progress");
       const bar = document.getElementById("bar");
       const percent = document.getElementById("percent");
-      progress.classList.remove("hidden");
-      bar.style.width = "0%";
-      percent.textContent = "0%";
+      progress.classList.remove("hidden"); bar.style.width = "0%"; percent.textContent = "0%";
 
       xhr.upload.onprogress = (evt) => {
         if (evt.lengthComputable) {
           const p = Math.round((evt.loaded / evt.total) * 100);
-          bar.style.width = p + "%";
-          percent.textContent = p + "%";
+          bar.style.width = p + "%"; percent.textContent = p + "%";
         }
       };
 
       xhr.onload = () => {
         progress.classList.add("hidden");
         if (xhr.status === 200) {
-          // download do blob
           const blob = xhr.response;
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "pdfs_divididos.zip";
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-          showModal(true, "PDFs divididos com sucesso!");
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a"); a.href = url; a.download = "pdfs_divididos.zip";
+          document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          showModal(true, "PDFs divididos com sucesso! Verifique também o arquivo relatorio.txt no ZIP.");
         } else {
-          // tentar ler JSON de erro
-          const reader = new FileReader();
-          reader.onload = () => {
-            try {
-              const data = JSON.parse(reader.result);
-              showModal(false, data.msg || "Erro ao processar.");
-            } catch {
-              showModal(false, "Erro ao processar.");
-            }
+          // ler JSON de erro, se possível
+          const fr = new FileReader();
+          fr.onload = () => {
+            try { const data = JSON.parse(fr.result); showModal(false, data.msg || "Erro ao processar."); }
+            catch { showModal(false, "Erro ao processar."); }
           };
-          reader.readAsText(xhr.response);
+          fr.readAsText(xhr.response);
         }
       };
 
-      xhr.onerror = () => {
-        progress.classList.add("hidden");
-        showModal(false, "Falha na conexão.");
-      };
-
+      xhr.onerror = () => { progress.classList.add("hidden"); showModal(false, "Falha na rede."); };
       xhr.send(fd);
     }
 
-    function showStatus(ok, msg) {
+    function showStatus(ok, msg){
       const box = document.getElementById("status-area");
-      box.classList.remove("hidden", "success", "error");
+      box.classList.remove("hidden","success","error");
       box.classList.add(ok ? "success" : "error");
       box.textContent = (ok ? "✔️ " : "❌ ") + msg;
     }
-
-    function showModal(ok, msg) {
+    function showModal(ok,msg){
       const modal = document.getElementById("modal");
       const icon = document.getElementById("modal-icon");
       const text = document.getElementById("modal-text");
@@ -175,11 +149,7 @@
       const sec = document.getElementById("historico");
       const ul = document.getElementById("lista-historico");
       sec.classList.remove("hidden");
-      nomes.forEach(n => {
-        const li = document.createElement("li");
-        li.textContent = n;
-        ul.prepend(li);
-      });
+      nomes.forEach(n => { const li = document.createElement("li"); li.textContent = n; ul.prepend(li); });
     }
   </script>
 </body>
